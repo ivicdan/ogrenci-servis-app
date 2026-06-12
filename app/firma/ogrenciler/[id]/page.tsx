@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard } from "lucide-react";
+import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
@@ -67,6 +68,7 @@ export default function OgrenciDetay() {
   const [selectedDriver, setSelectedDriver] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -80,6 +82,13 @@ export default function OgrenciDetay() {
       if (d) setDrivers(d);
     }).finally(() => setLoading(false));
   }, [params.id]);
+
+  async function handleDelete() {
+    const { error } = await apiFetch(`/api/firma/ogrenciler/${params.id}`, { method: "DELETE" });
+    if (error) return toast.error(error);
+    toast.success("Öğrenci pasife alındı.");
+    router.push("/firma/ogrenciler");
+  }
 
   async function handleAssignDriver() {
     setSaving(true);
@@ -104,12 +113,27 @@ export default function OgrenciDetay() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-5"
-      >
-        <ArrowLeft className="w-4 h-4" /> Geri
-      </button>
+      <div className="flex items-center justify-between mb-5">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="w-4 h-4" /> Geri
+        </button>
+        <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDeleteConfirm(true)}>
+          <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
+        </Button>
+      </div>
+
+      <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader><DialogTitle>Öğrenciyi Sil</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-600">
+            <strong>{student.firstName} {student.lastName}</strong> adlı öğrenci pasife alınacak ve velisi sisteme giriş yapamayacak. Emin misiniz?
+          </p>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(false)}>İptal</Button>
+            <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={handleDelete}>Evet, Sil</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
         <div className="flex items-start gap-4">

@@ -68,3 +68,23 @@ export async function PUT(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = requireAuth(req, ["FIRM"]);
+  if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
+
+  const { id } = await params;
+
+  const student = await prisma.student.findFirst({ where: { id, firmId: user.id } });
+  if (!student) return NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
+
+  await prisma.student.update({
+    where: { id },
+    data: { status: "INACTIVE" },
+  });
+
+  return NextResponse.json({ message: "Öğrenci pasife alındı." });
+}

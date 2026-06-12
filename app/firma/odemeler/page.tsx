@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CreditCard, CheckCircle } from "lucide-react";
+import { CreditCard, CheckCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -16,9 +16,19 @@ interface Payment {
   student: {
     firstName: string;
     lastName: string;
-    parent: { firstName: string; lastName: string } | null;
+    parent: { firstName: string; lastName: string; phone: string } | null;
   };
 }
+
+const methodMap: Record<string, string> = {
+  CASH: "Nakit", BANK_TRANSFER: "Havale/EFT",
+};
+
+const tabs = [
+  { key: "SUBMITTED", label: "Onay Bekliyor" },
+  { key: "OVERDUE", label: "Ödemesi Gecikenler" },
+  { key: "APPROVED", label: "Onaylananlar" },
+];
 
 export default function FirmaOdemeler() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -38,30 +48,23 @@ export default function FirmaOdemeler() {
     loadPayments();
   }
 
-  const statusMap: Record<string, string> = {
-    PENDING: "Bekliyor", SUBMITTED: "Onay Bekliyor", APPROVED: "Onaylandı",
-  };
-
-  const methodMap: Record<string, string> = {
-    CASH: "Nakit", BANK_TRANSFER: "Havale/EFT",
-  };
-
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-xl font-bold text-gray-900 mb-4">Ödemeler</h1>
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-        {["SUBMITTED", "APPROVED", "PENDING"].map((s) => (
+        {tabs.map((t) => (
           <button
-            key={s}
-            onClick={() => setFilter(s)}
+            key={t.key}
+            onClick={() => setFilter(t.key)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === s
+              filter === t.key
                 ? "bg-blue-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200"
             }`}
           >
-            {statusMap[s]}
+            {t.key === "OVERDUE" && <AlertTriangle className="w-3.5 h-3.5 inline mr-1 text-red-400" />}
+            {t.label}
           </button>
         ))}
       </div>
@@ -74,7 +77,7 @@ export default function FirmaOdemeler() {
           </div>
         )}
         {payments.map((p) => (
-          <div key={p.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div key={p.id} className={`bg-white rounded-2xl p-4 shadow-sm border ${filter === "OVERDUE" ? "border-red-100" : "border-gray-100"}`}>
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="font-semibold text-gray-900">
@@ -83,15 +86,17 @@ export default function FirmaOdemeler() {
                 {p.student.parent && (
                   <p className="text-xs text-gray-500">
                     Veli: {p.student.parent.firstName} {p.student.parent.lastName}
+                    {p.student.parent.phone && ` · ${p.student.parent.phone}`}
                   </p>
                 )}
               </div>
-              <Badge
-                variant={p.status === "APPROVED" ? "default" : "secondary"}
-                className="text-xs"
-              >
-                {statusMap[p.status]}
-              </Badge>
+              {filter === "OVERDUE" ? (
+                <Badge variant="secondary" className="text-xs text-red-600 bg-red-50">Gecikmiş</Badge>
+              ) : (
+                <Badge variant={p.status === "APPROVED" ? "default" : "secondary"} className="text-xs">
+                  {p.status === "APPROVED" ? "Onaylandı" : "Onay Bekliyor"}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm space-y-0.5">
@@ -100,6 +105,11 @@ export default function FirmaOdemeler() {
                   <p className="text-xs text-gray-500">
                     Ödeme: {new Date(p.paidDate).toLocaleDateString("tr-TR")}
                     {p.method && ` · ${methodMap[p.method]}`}
+                  </p>
+                )}
+                {filter === "OVERDUE" && (
+                  <p className="text-xs text-red-500">
+                    Son ödeme: {new Date(p.dueDate).toLocaleDateString("tr-TR")}
                   </p>
                 )}
               </div>

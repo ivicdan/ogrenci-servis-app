@@ -5,40 +5,39 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { phone, password } = await req.json();
+    const { studentTcId, password } = await req.json();
 
-    if (!phone || !password) {
+    if (!studentTcId || !password) {
       return NextResponse.json(
-        { error: "Telefon ve şifre zorunludur." },
+        { error: "Öğrenci TC kimlik no ve şifre zorunludur." },
         { status: 400 }
       );
     }
 
+    const student = await prisma.student.findFirst({
+      where: { tcId: studentTcId, status: "ACTIVE" },
+    });
+
+    if (!student) {
+      return NextResponse.json(
+        { error: "Bu TC kimlik numarasına ait aktif öğrenci bulunamadı." },
+        { status: 404 }
+      );
+    }
+
     const parent = await prisma.parent.findUnique({
-      where: { phone },
+      where: { studentId: student.id },
       include: {
         student: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            firmId: true,
-          },
+          select: { id: true, firstName: true, lastName: true, firmId: true },
         },
       },
     });
 
     if (!parent) {
       return NextResponse.json(
-        { error: "Kullanıcı bulunamadı." },
+        { error: "Bu öğrenciye ait veli kaydı bulunamadı. Önce kayıt olun." },
         { status: 404 }
-      );
-    }
-
-    if (!parent.phoneVerified) {
-      return NextResponse.json(
-        { error: "Telefon numaranız henüz doğrulanmamış." },
-        { status: 403 }
       );
     }
 

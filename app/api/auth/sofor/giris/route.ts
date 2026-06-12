@@ -5,50 +5,47 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { driverCode, tcId, password } = await req.json();
+    const { driverCode, password } = await req.json();
 
-    if (!driverCode || !tcId || !password) {
+    if (!driverCode || !password) {
       return NextResponse.json(
-        { error: "Şoför ID, TC kimlik ve şifre zorunludur." },
+        { error: "Şoför ID ve şifre zorunludur." },
         { status: 400 }
       );
     }
 
-    const driver = await prisma.driver.findFirst({
-      where: { driverCode, tcId },
+    const driver = await prisma.driver.findUnique({
+      where: { driverCode },
       include: { firm: { select: { firmCode: true, name: true } } },
     });
 
     if (!driver) {
       return NextResponse.json(
-        { error: "Şoför bulunamadı. ID veya TC hatalı." },
+        { error: "Şoför bulunamadı. ID hatalı." },
         { status: 404 }
       );
     }
 
     if (driver.status === "INACTIVE") {
       return NextResponse.json(
-        { error: "Bu hesap pasif durumdadır." },
+        { error: "Bu hesap pasif durumdadır. Firmanızla iletişime geçin." },
         { status: 403 }
       );
     }
 
-    // İlk girişte şifre belirleniyor
-    let token: string;
     if (!driver.password) {
-      const hashed = await bcrypt.hash(password, 10);
-      await prisma.driver.update({
-        where: { id: driver.id },
-        data: { password: hashed },
-      });
-      token = signToken({ id: driver.id, userType: "DRIVER" });
-    } else {
-      const valid = await bcrypt.compare(password, driver.password);
-      if (!valid) {
-        return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
-      }
-      token = signToken({ id: driver.id, userType: "DRIVER" });
+      return NextResponse.json(
+        { error: "Şifre tanımlanmamış. Firmanızla iletişime geçin." },
+        { status: 403 }
+      );
     }
+
+    const valid = await bcrypt.compare(password, driver.password);
+    if (!valid) {
+      return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
+    }
+
+    const token = signToken({ id: driver.id, userType: "DRIVER" });
 
     return NextResponse.json({
       token,
@@ -60,7 +57,8 @@ export async function POST(req: NextRequest) {
         firm: driver.firm,
       },
     });
-  } catch {
+  } catch (e) {
+    console.error("[sofor/giris]", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
   }
 }

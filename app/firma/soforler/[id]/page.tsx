@@ -1,42 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Bus, ArrowLeft, GraduationCap, Phone, Route } from "lucide-react";
+import { Bus, ArrowLeft, GraduationCap, Phone, Route, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
 const studyTimeLabel: Record<string, string> = {
-  MORNING: "Sabah",
-  AFTERNOON: "Öğleden Sonra",
+  MORNING: "Sabah", AFTERNOON: "Öğleden Sonra",
 };
-
 const routeTypeLabel: Record<string, string> = {
-  MORNING_PICKUP: "Sabah Alış",
-  MORNING_DROPOFF: "Sabah Bırakış",
-  AFTERNOON_PICKUP: "Öğle Alış",
-  AFTERNOON_DROPOFF: "Öğle Bırakış",
+  MORNING_PICKUP: "Sabah Alış", MORNING_DROPOFF: "Sabah Bırakış",
+  AFTERNOON_PICKUP: "Öğle Alış", AFTERNOON_DROPOFF: "Öğle Bırakış",
 };
 
 interface DriverDetail {
-  id: string;
-  driverCode: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  tcId: string;
-  plateNumber: string | null;
-  assistantName: string | null;
-  status: string;
-  createdAt: string;
+  id: string; driverCode: string; firstName: string; lastName: string;
+  phone: string; tcId: string; plateNumber: string | null;
+  assistantName: string | null; status: string; createdAt: string;
   _count: { students: number; routes: number };
   students: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    school: string;
-    class: string;
-    studyTime: string;
+    id: string; firstName: string; lastName: string; school: string;
+    class: string; studyTime: string;
     parent: { firstName: string; lastName: string; phone: string } | null;
   }[];
   routes: { id: string; name: string; type: string }[];
@@ -47,24 +36,116 @@ export default function SoforDetay() {
   const router = useRouter();
   const [driver, setDriver] = useState<DriverDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", phone: "", plateNumber: "", assistantName: "" });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     apiFetch<DriverDetail>(`/api/firma/soforler/${params.id}`)
-      .then(({ data }) => { if (data) setDriver(data); })
+      .then(({ data }) => {
+        if (data) {
+          setDriver(data);
+          setEditForm({
+            firstName: data.firstName, lastName: data.lastName,
+            phone: data.phone, plateNumber: data.plateNumber ?? "",
+            assistantName: data.assistantName ?? "",
+          });
+        }
+      })
       .finally(() => setLoading(false));
   }, [params.id]);
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await apiFetch(`/api/firma/soforler/${params.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...editForm, status: driver?.status }),
+    });
+    setSaving(false);
+    if (error) return toast.error(error);
+    toast.success("Bilgiler güncellendi!");
+    setEditOpen(false);
+    if (driver) setDriver({ ...driver, ...editForm, plateNumber: editForm.plateNumber || null, assistantName: editForm.assistantName || null });
+  }
+
+  async function handleDelete() {
+    const { error } = await apiFetch(`/api/firma/soforler/${params.id}`, { method: "DELETE" });
+    if (error) return toast.error(error);
+    toast.success("Şoför pasife alındı.");
+    router.push("/firma/soforler");
+  }
 
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
   if (!driver) return <div className="text-center py-12 text-gray-400">Şoför bulunamadı.</div>;
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-5"
-      >
-        <ArrowLeft className="w-4 h-4" /> Geri
-      </button>
+      <div className="flex items-center justify-between mb-5">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="w-4 h-4" /> Geri
+        </button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="w-3.5 h-3.5 mr-1" /> Düzenle
+          </Button>
+          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDeleteConfirm(true)}>
+            <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
+          </Button>
+        </div>
+      </div>
+
+      {/* Düzenle Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader><DialogTitle>Şoförü Düzenle</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Ad</Label>
+                <Input value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} required className="mt-1" />
+              </div>
+              <div>
+                <Label>Soyad</Label>
+                <Input value={editForm.lastName} onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} required className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label>Telefon</Label>
+              <Input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} required className="mt-1" />
+            </div>
+            <div>
+              <Label>Araç Plakası</Label>
+              <Input value={editForm.plateNumber} onChange={(e) => setEditForm({ ...editForm, plateNumber: e.target.value })} className="mt-1" />
+            </div>
+            <div>
+              <Label>Hostes Adı</Label>
+              <Input value={editForm.assistantName} onChange={(e) => setEditForm({ ...editForm, assistantName: e.target.value })} className="mt-1" />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditOpen(false)}>İptal</Button>
+              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={saving}>
+                {saving ? "Kaydediliyor..." : "Kaydet"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Silme Onay Dialog */}
+      <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader><DialogTitle>Şoförü Sil</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-600">
+            <strong>{driver.firstName} {driver.lastName}</strong> adlı şoför pasife alınacak ve sisteme giriş yapamayacak. Emin misiniz?
+          </p>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirm(false)}>İptal</Button>
+            <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={handleDelete}>Evet, Sil</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
         <div className="flex items-start gap-4">
@@ -75,9 +156,7 @@ export default function SoforDetay() {
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{driver.firstName} {driver.lastName}</h1>
-                <span className="font-mono text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded mt-1 inline-block">
-                  {driver.driverCode}
-                </span>
+                <span className="font-mono text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded mt-1 inline-block">{driver.driverCode}</span>
               </div>
               <Badge variant={driver.status === "ACTIVE" ? "default" : "secondary"}>
                 {driver.status === "ACTIVE" ? "Aktif" : "Pasif"}
@@ -87,22 +166,13 @@ export default function SoforDetay() {
               <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> {driver.phone}</p>
               {driver.plateNumber && <p>🚌 Plaka: {driver.plateNumber}</p>}
               {driver.assistantName && <p>👤 Hostes: {driver.assistantName}</p>}
-              <p className="text-xs text-gray-400">
-                Kayıt: {new Date(driver.createdAt).toLocaleDateString("tr-TR")}
-              </p>
+              <p className="text-xs text-gray-400">Kayıt: {new Date(driver.createdAt).toLocaleDateString("tr-TR")}</p>
             </div>
           </div>
         </div>
-
         <div className="flex gap-4 mt-4 pt-4 border-t border-gray-100 text-center">
-          <div className="flex-1">
-            <p className="text-2xl font-bold text-gray-900">{driver._count.students}</p>
-            <p className="text-xs text-gray-500">Öğrenci</p>
-          </div>
-          <div className="flex-1">
-            <p className="text-2xl font-bold text-gray-900">{driver._count.routes}</p>
-            <p className="text-xs text-gray-500">Güzergah</p>
-          </div>
+          <div className="flex-1"><p className="text-2xl font-bold text-gray-900">{driver._count.students}</p><p className="text-xs text-gray-500">Öğrenci</p></div>
+          <div className="flex-1"><p className="text-2xl font-bold text-gray-900">{driver._count.routes}</p><p className="text-xs text-gray-500">Güzergah</p></div>
         </div>
       </div>
 
@@ -114,10 +184,8 @@ export default function SoforDetay() {
           <div className="space-y-2">
             {driver.routes.map((r) => (
               <div key={r.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-800">{r.name}</span>
-                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
-                  {routeTypeLabel[r.type] ?? r.type}
-                </span>
+                <span>{r.name}</span>
+                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">{routeTypeLabel[r.type] ?? r.type}</span>
               </div>
             ))}
           </div>
@@ -132,27 +200,12 @@ export default function SoforDetay() {
           <div className="space-y-3">
             {driver.students.map((s) => (
               <div key={s.id} className="border border-gray-100 rounded-xl p-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
-                    <p className="text-xs text-gray-500">{s.school} · {s.class} · {studyTimeLabel[s.studyTime]}</p>
-                  </div>
-                </div>
-                {s.parent && (
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    👤 {s.parent.firstName} {s.parent.lastName} · {s.parent.phone}
-                  </p>
-                )}
+                <p className="font-medium text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
+                <p className="text-xs text-gray-500">{s.school} · {s.class} · {studyTimeLabel[s.studyTime]}</p>
+                {s.parent && <p className="text-xs text-gray-500 mt-1">👤 {s.parent.firstName} {s.parent.lastName} · {s.parent.phone}</p>}
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {driver.students.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-40" />
-          <p>Bu şoföre henüz öğrenci atanmamış</p>
         </div>
       )}
     </div>

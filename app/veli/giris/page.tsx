@@ -11,7 +11,7 @@ import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 export default function VeliGiris() {
   const router = useRouter();
-  const [form, setForm] = useState({ phone: "", password: "" });
+  const [form, setForm] = useState({ studentTcId: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -40,19 +40,24 @@ export default function VeliGiris() {
           </div>
         </div>
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">Veli Girişi</h1>
-        <p className="text-center text-gray-500 text-sm mb-6">Kayıtlı telefonunuzla giriş yapın</p>
+        <p className="text-center text-gray-500 text-sm mb-6">Öğrenci TC kimlik numaranızla giriş yapın</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="phone">Telefon Numarası</Label>
-            <Input id="phone" type="tel" placeholder="05XX XXX XX XX"
-              value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required className="mt-1" />
+            <Label htmlFor="studentTcId">Öğrenci TC Kimlik No</Label>
+            <Input
+              id="studentTcId"
+              placeholder="Öğrenciye ait TC kimlik numarası"
+              value={form.studentTcId}
+              onChange={(e) => setForm({ ...form, studentTcId: e.target.value })}
+              required
+              className="mt-1"
+            />
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>
             <div className="relative mt-1">
-              <Input id="password" type={showPass ? "text" : "password"} placeholder="Şifreniz"
+              <Input id="password" type={showPass ? "text" : "password"} placeholder="Kayıt şifreniz"
                 value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required />
               <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"

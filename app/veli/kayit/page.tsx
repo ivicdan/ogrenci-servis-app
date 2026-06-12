@@ -56,7 +56,7 @@ export default function VeliKayit() {
           </div>
           <div>
             <Label>Öğrenci TC Kimlik No</Label>
-            <Input placeholder="Çocuğunuzun TC kimlik numarası"
+            <Input placeholder="Öğrenciye ait TC kimlik numarası"
               value={form.studentTcId} onChange={(e) => setForm({ ...form, studentTcId: e.target.value })}
               required className="mt-1" />
           </div>

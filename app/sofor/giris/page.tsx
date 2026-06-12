@@ -11,7 +11,7 @@ import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 export default function SoforGiris() {
   const router = useRouter();
-  const [form, setForm] = useState({ driverCode: "", tcId: "", password: "" });
+  const [form, setForm] = useState({ driverCode: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -55,23 +55,12 @@ export default function SoforGiris() {
             />
           </div>
           <div>
-            <Label htmlFor="tcId">TC Kimlik No</Label>
-            <Input
-              id="tcId"
-              placeholder="TC kimlik numaranız"
-              value={form.tcId}
-              onChange={(e) => setForm({ ...form, tcId: e.target.value })}
-              required
-              className="mt-1"
-            />
-          </div>
-          <div>
             <Label htmlFor="password">Şifre</Label>
             <div className="relative mt-1">
               <Input
                 id="password"
                 type={showPass ? "text" : "password"}
-                placeholder="İlk girişte şifrenizi belirleyin"
+                placeholder="Firmanızdan şifrenizi isteyin"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
@@ -90,8 +79,7 @@ export default function SoforGiris() {
           </Button>
         </form>
         <div className="mt-4 p-3 bg-green-50 rounded-xl border border-green-100 text-center">
-          <p className="text-xs text-gray-500">Hesabınız yok mu?</p>
-          <p className="text-xs text-green-700 font-medium mt-0.5">
+          <p className="text-xs text-green-700 font-medium">
             Servis firmanızdan Şoför ID ve şifrenizi alın.
           </p>
         </div>

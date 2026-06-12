@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Bus, Bell, LogOut } from "lucide-react";
+import { LayoutDashboard, Bus, Bell, LogOut, GraduationCap } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 
 const navItems = [
   { href: "/sofor/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
   { href: "/sofor/guzergahlar", label: "Güzergahlar", icon: Bus },
+  { href: "/sofor/ogrenciler", label: "Öğrencilerim", icon: GraduationCap },
   { href: "/sofor/bildirimler", label: "Bildirimler", icon: Bell, showBadge: true },
 ];
 
