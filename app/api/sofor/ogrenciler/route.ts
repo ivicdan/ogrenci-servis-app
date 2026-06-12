@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       parent: {
         select: {
           firstName: true, lastName: true, phone: true,
-          address: true, spouseName: true, spousePhone: true,
+          address: true, spouseFirstName: true, spouseLastName: true, spousePhone: true,
         },
       },
     },
