@@ -16,8 +16,8 @@ interface StudentDetail {
   parent: {
     firstName: string; lastName: string; phone: string;
     address: string; profession: string | null;
-    spouseName: string | null; spousePhone: string | null;
-    spouseProfession: string | null;
+    spouseFirstName: string | null; spouseLastName: string | null;
+    spousePhone: string | null; spouseProfession: string | null;
   } | null;
 }
 
@@ -78,11 +78,11 @@ export default function SoforOgrenciDetay() {
         </div>
       )}
 
-      {student.parent?.spouseName && (
+      {student.parent?.spouseFirstName && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-900 text-sm mb-3">Eş / Diğer Veli</h2>
           <div className="space-y-2 text-sm text-gray-700">
-            <p className="font-medium">{student.parent.spouseName}</p>
+            <p className="font-medium">{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
             {student.parent.spousePhone && (
               <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.spousePhone}</p>
             )}

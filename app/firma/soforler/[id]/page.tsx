@@ -21,7 +21,7 @@ const routeTypeLabel: Record<string, string> = {
 interface DriverDetail {
   id: string; driverCode: string; firstName: string; lastName: string;
   phone: string; tcId: string; plateNumber: string | null;
-  assistantName: string | null; status: string; createdAt: string;
+  assistantName: string | null; plainPassword: string | null; status: string; createdAt: string;
   _count: { students: number; routes: number };
   students: {
     id: string; firstName: string; lastName: string; school: string;
@@ -77,7 +77,10 @@ export default function SoforDetay() {
     const { data, error } = await apiFetch<{ plainPassword: string }>(`/api/firma/soforler/${params.id}`, { method: "PATCH" });
     setResetting(false);
     if (error) return toast.error(error);
-    if (data) setResetPassword(data.plainPassword);
+    if (data) {
+      setResetPassword(data.plainPassword);
+      if (driver) setDriver({ ...driver, plainPassword: data.plainPassword });
+    }
   }
 
   async function handleDelete() {
@@ -217,7 +220,7 @@ export default function SoforDetay() {
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Giriş Bilgileri</p>
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xs text-gray-500">Şoför ID <span className="text-gray-400">(giriş için)</span></p>
+              <p className="text-xs text-gray-500">Şoför ID</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-lg text-sm">{driver.driverCode}</span>
                 <button onClick={() => { navigator.clipboard.writeText(driver.driverCode); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
@@ -227,7 +230,16 @@ export default function SoforDetay() {
             </div>
             <div className="flex-1">
               <p className="text-xs text-gray-500">Şifre</p>
-              <p className="text-xs text-gray-400 mt-0.5 italic">Gizli — "Şifreyi Sıfırla" ile yenile</p>
+              {driver.plainPassword ? (
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg text-sm">{driver.plainPassword}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(driver.plainPassword!); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 mt-0.5 italic">"Şifreyi Sıfırla" ile yenile</p>
+              )}
             </div>
           </div>
         </div>

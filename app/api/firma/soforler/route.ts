@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const drivers = await prisma.driver.findMany({
-    where: { firmId: user.id },
+    where: { firmId: user.id, status: "ACTIVE" },
     select: {
       id: true,
       driverCode: true,
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       assistantName,
       firmId: user.id,
       password: hashedPassword,
+      plainPassword,
     },
     select: {
       id: true,

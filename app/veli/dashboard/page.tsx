@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, Bus, Phone, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { GraduationCap, Bus, Phone } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 interface ParentData {
@@ -32,28 +30,12 @@ interface ParentData {
 
 export default function VeliDashboard() {
   const [data, setData] = useState<ParentData | null>(null);
-  const [sending, setSending] = useState<"PICKUP" | "DROPOFF" | null>(null);
 
   useEffect(() => {
     apiFetch<ParentData>("/api/veli/ogrenci").then(({ data }) => {
       if (data) setData(data);
     });
   }, []);
-
-  async function handleAbsence(type: "PICKUP" | "DROPOFF") {
-    setSending(type);
-    const { error } = await apiFetch("/api/veli/devamsizlik", {
-      method: "POST",
-      body: JSON.stringify({ type }),
-    });
-    setSending(null);
-    if (error) return toast.error(error);
-    toast.success(
-      type === "PICKUP"
-        ? "Sabah devamsızlığı bildirildi."
-        : "Öğleden dönüş devamsızlığı bildirildi."
-    );
-  }
 
   if (!data) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
 
@@ -102,46 +84,6 @@ export default function VeliDashboard() {
           </div>
         )}
       </div>
-
-      {/* Devamsızlık Bildirimi */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertCircle className="w-4 h-4 text-orange-500" />
-          <p className="font-semibold text-gray-900 text-sm">Devamsızlık Bildir</p>
-        </div>
-        <p className="text-xs text-gray-500 mb-3">
-          Çocuğunuz bugün servise binmeyecekse şoföre bildirim gönderin.
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-orange-200 text-orange-700 hover:bg-orange-50"
-            onClick={() => handleAbsence("PICKUP")}
-            disabled={sending !== null}
-          >
-            {sending === "PICKUP" ? "Gönderiliyor..." : "Sabah Gitmeyecek"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-orange-200 text-orange-700 hover:bg-orange-50"
-            onClick={() => handleAbsence("DROPOFF")}
-            disabled={sending !== null}
-          >
-            {sending === "DROPOFF" ? "Gönderiliyor..." : "Öğleden Dönmeyecek"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Firma IBAN */}
-      {student.firm.iban && (
-        <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-          <p className="text-xs font-semibold text-blue-700 mb-1">ÖDEME İBANI</p>
-          <p className="font-mono text-sm text-gray-800 break-all">{student.firm.iban}</p>
-          <p className="text-xs text-blue-500 mt-1">{student.firm.name ?? "Firma"}</p>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Link href="/veli/profil"

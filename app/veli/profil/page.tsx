@@ -16,19 +16,19 @@ const studyTimeLabel: Record<string, string> = {
 export default function VeliProfil() {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({});
-  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
       if (data) {
-        setPhone(data.phone ?? "");
         setForm({
           firstName: data.firstName ?? "",
           lastName: data.lastName ?? "",
+          phone: data.phone ?? "",
           profession: data.profession ?? "",
           address: data.address ?? "",
-          spouseName: data.spouseName ?? "",
+          spouseFirstName: data.spouseFirstName ?? "",
+          spouseLastName: data.spouseLastName ?? "",
           spousePhone: data.spousePhone ?? "",
           spouseProfession: data.spouseProfession ?? "",
           studentFirstName: data.student?.firstName ?? "",
@@ -117,8 +117,7 @@ export default function VeliProfil() {
           <h2 className="font-semibold text-gray-900 text-sm">VELİ BİLGİLERİ</h2>
           <div>
             <Label>Telefon Numarası</Label>
-            <Input value={phone} disabled className="mt-1 bg-gray-50 text-gray-500" />
-            <p className="text-xs text-gray-400 mt-1">Giriş numaranız, değiştirilemez.</p>
+            <Input type="tel" placeholder="05XX XXX XX XX" value={f("phone")} onChange={(e) => s("phone", e.target.value)} className="mt-1" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -144,13 +143,17 @@ export default function VeliProfil() {
           <h2 className="font-semibold text-gray-900 text-sm">EŞ / DİĞER VELİ</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Ad Soyad</Label>
-              <Input value={f("spouseName")} onChange={(e) => s("spouseName", e.target.value)} className="mt-1" />
+              <Label>Ad</Label>
+              <Input value={f("spouseFirstName")} onChange={(e) => s("spouseFirstName", e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label>Telefon</Label>
-              <Input type="tel" value={f("spousePhone")} onChange={(e) => s("spousePhone", e.target.value)} className="mt-1" />
+              <Label>Soyad</Label>
+              <Input value={f("spouseLastName")} onChange={(e) => s("spouseLastName", e.target.value)} className="mt-1" />
             </div>
+          </div>
+          <div>
+            <Label>Telefon</Label>
+            <Input type="tel" value={f("spousePhone")} onChange={(e) => s("spousePhone", e.target.value)} className="mt-1" />
           </div>
           <div>
             <Label>Meslek</Label>

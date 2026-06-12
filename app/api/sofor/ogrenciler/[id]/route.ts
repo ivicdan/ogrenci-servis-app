@@ -18,7 +18,8 @@ export async function GET(
         select: {
           firstName: true, lastName: true, phone: true,
           address: true, profession: true,
-          spouseName: true, spousePhone: true, spouseProfession: true,
+          spouseFirstName: true, spouseLastName: true,
+          spousePhone: true, spouseProfession: true,
         },
       },
     },

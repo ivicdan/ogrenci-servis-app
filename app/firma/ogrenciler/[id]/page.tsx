@@ -47,7 +47,8 @@ interface StudentDetail {
     phone: string;
     address: string;
     profession: string | null;
-    spouseName: string | null;
+    spouseFirstName: string | null;
+    spouseLastName: string | null;
     spousePhone: string | null;
     spouseProfession: string | null;
   } | null;
@@ -205,10 +206,10 @@ export default function OgrenciDetay() {
             {student.parent.address && (
               <p className="flex items-start gap-1.5 text-gray-600"><MapPin className="w-3.5 h-3.5 mt-0.5" /> {student.parent.address}</p>
             )}
-            {student.parent.spouseName && (
+            {student.parent.spouseFirstName && (
               <div className="pt-2 border-t border-gray-100 mt-2">
                 <p className="font-medium text-xs text-gray-500 mb-1">Eş / Diğer Veli</p>
-                <p>{student.parent.spouseName}</p>
+                <p>{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
                 {student.parent.spousePhone && (
                   <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.spousePhone}</p>
                 )}

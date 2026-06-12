@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bus, Eye, EyeOff } from "lucide-react";
@@ -9,11 +9,25 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
+const STORAGE_KEY = "sofor_remember";
+
 export default function SoforGiris() {
   const router = useRouter();
   const [form, setForm] = useState({ driverCode: "", password: "" });
+  const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setForm(parsed);
+        setRemember(true);
+      }
+    } catch {}
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,6 +39,11 @@ export default function SoforGiris() {
     setLoading(false);
     if (error) return toast.error(error);
     if (data?.token) {
+      if (remember) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
       setToken(data.token);
       setUserType("DRIVER");
       router.push("/sofor/dashboard");
@@ -74,6 +93,15 @@ export default function SoforGiris() {
               </button>
             </div>
           </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-green-600"
+            />
+            <span className="text-sm text-gray-600">Beni hatırla</span>
+          </label>
           <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
             {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
           </Button>

@@ -23,6 +23,7 @@ export async function GET(
       tcId: true,
       plateNumber: true,
       assistantName: true,
+      plainPassword: true,
       status: true,
       createdAt: true,
       _count: { select: { students: true, routes: true } },
@@ -86,7 +87,7 @@ export async function PATCH(
 
   const plainPassword = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedPassword = await bcrypt.hash(plainPassword, 10);
-  await prisma.driver.update({ where: { id }, data: { password: hashedPassword } });
+  await prisma.driver.update({ where: { id }, data: { password: hashedPassword, plainPassword } });
 
   return NextResponse.json({ plainPassword });
 }
