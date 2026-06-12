@@ -9,13 +9,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
-type Step = "form" | "otp";
-
 export default function VeliKayit() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({ firmCode: "", studentTcId: "", phone: "", password: "", passwordConfirm: "" });
-  const [otp, setOtp] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -23,22 +19,9 @@ export default function VeliKayit() {
     e.preventDefault();
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
     setLoading(true);
-    const { error } = await apiFetch("/api/auth/veli/kayit", {
+    const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/kayit", {
       method: "POST",
       body: JSON.stringify(form),
-    });
-    setLoading(false);
-    if (error) return toast.error(error);
-    toast.success("Doğrulama kodu gönderildi!");
-    setStep("otp");
-  }
-
-  async function handleOtp(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/otp-dogrula", {
-      method: "POST",
-      body: JSON.stringify({ phone: form.phone, otpCode: otp }),
     });
     setLoading(false);
     if (error) return toast.error(error);
@@ -48,32 +31,6 @@ export default function VeliKayit() {
       toast.success("Kayıt tamamlandı!");
       router.push("/veli/profil");
     }
-  }
-
-  if (step === "otp") {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-violet-100">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6">
-          <h1 className="text-xl font-bold text-center text-gray-900 mb-2">Telefon Doğrulama</h1>
-          <p className="text-center text-gray-500 text-sm mb-6">
-            <strong>{form.phone}</strong> numarasına gönderilen 6 haneli kodu girin
-          </p>
-          <form onSubmit={handleOtp} className="space-y-4">
-            <Input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="000000"
-              maxLength={6}
-              className="text-center text-2xl font-mono tracking-widest"
-              required
-            />
-            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
-              {loading ? "Doğrulanıyor..." : "Doğrula"}
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
   }
 
   return (

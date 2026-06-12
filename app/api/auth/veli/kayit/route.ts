@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { generateOtpCode, sendOtp } from "@/lib/sms";
+import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Firma ID zorunlu kontrolü
     const firm = await prisma.firm.findUnique({ where: { firmCode } });
     if (!firm) {
       return NextResponse.json(
@@ -29,7 +28,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Başka firmada aktif öğrenci kontrolü
     const existingStudent = await prisma.student.findFirst({
       where: { tcId: studentTcId, status: "ACTIVE" },
       include: { firm: { select: { firmCode: true } } },
@@ -37,14 +35,11 @@ export async function POST(req: NextRequest) {
 
     if (existingStudent && existingStudent.firmId !== firm.id) {
       return NextResponse.json(
-        {
-          error: `Bu TC kimlik numarası başka bir firmada (${existingStudent.firm.firmCode}) aktif öğrenci olarak kayıtlı.`,
-        },
+        { error: `Bu TC kimlik numarası başka bir firmada (${existingStudent.firm.firmCode}) aktif öğrenci olarak kayıtlı.` },
         { status: 409 }
       );
     }
 
-    // Telefon daha önce veli olarak kayıtlı mı?
     const existingParent = await prisma.parent.findUnique({ where: { phone } });
     if (existingParent) {
       return NextResponse.json(
@@ -53,7 +48,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Öğrenci yoksa oluştur; varsa mevcut kaydı kullan
     let student = existingStudent;
     if (!student) {
       student = await prisma.student.create({
@@ -72,10 +66,8 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const otpCode = generateOtpCode();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 dk
 
-    await prisma.parent.create({
+    const parent = await prisma.parent.create({
       data: {
         studentId: student.id,
         firstName: "",
@@ -83,20 +75,13 @@ export async function POST(req: NextRequest) {
         phone,
         password: hashed,
         address: "",
-        otpCode,
-        otpExpiry,
+        phoneVerified: true, // SMS doğrulama geçici olarak devre dışı
       },
     });
 
-    await sendOtp(phone, otpCode);
+    const token = signToken({ id: parent.id, userType: "PARENT" });
 
-    return NextResponse.json(
-      {
-        message: "Doğrulama kodu telefonunuza gönderildi.",
-        studentId: student.id,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({ token, studentId: student.id }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
   }
