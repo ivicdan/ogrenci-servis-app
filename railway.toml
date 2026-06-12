@@ -1,8 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npx prisma generate && npm run build && npx prisma db push"
+buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
+preDeployCommand = "npx prisma db push"
 startCommand = "npm run start"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
