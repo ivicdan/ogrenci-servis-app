@@ -60,6 +60,7 @@ export async function PUT(req: NextRequest) {
     studentClass,
     studentTeacher,
     studentStudyTime,
+    studentPhone,
   } = await req.json();
 
   const parent = await prisma.parent.findUnique({
@@ -92,6 +93,7 @@ export async function PUT(req: NextRequest) {
         class: studentClass,
         teacher: studentTeacher,
         studyTime: studentStudyTime,
+        phone: studentPhone || null,
       },
     }),
   ]);

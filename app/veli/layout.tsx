@@ -1,15 +1,16 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, User, CreditCard, Bell, LogOut } from "lucide-react";
-import { getUserType, clearToken } from "@/lib/api-client";
+import { LayoutDashboard, User, CreditCard, Bell, LogOut, AlertTriangle } from "lucide-react";
+import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 
 const navItems = [
   { href: "/veli/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
   { href: "/veli/profil", label: "Profil", icon: User },
   { href: "/veli/odeme", label: "Ödemeler", icon: CreditCard },
-  { href: "/veli/bildirimler", label: "Bildirimler", icon: Bell },
+  { href: "/veli/devamsizlik", label: "Devamsızlık", icon: AlertTriangle },
+  { href: "/veli/bildirimler", label: "Bildirimler", icon: Bell, showBadge: true },
 ];
 
 const PUBLIC_PATHS = ["/veli/giris", "/veli/kayit"];
@@ -18,12 +19,25 @@ export default function VeliLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const pathname = usePathname();
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     if (!isPublic && getUserType() !== "PARENT") {
       router.replace("/veli/giris");
     }
   }, [isPublic, router]);
+
+  useEffect(() => {
+    if (isPublic) return;
+    const fetchCount = () => {
+      apiFetch<{ count: number }>("/api/veli/bildirimler/count").then(({ data }) => {
+        if (data) setUnread(data.count);
+      });
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, [isPublic]);
 
   if (isPublic) return <>{children}</>;
 
@@ -45,7 +59,15 @@ export default function VeliLayout({ children }: { children: React.ReactNode }) 
                   active ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                <item.icon className="w-4 h-4" />{item.label}
+                <div className="relative">
+                  <item.icon className="w-4 h-4" />
+                  {item.showBadge && unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </div>
+                {item.label}
               </Link>
             );
           })}
@@ -69,7 +91,15 @@ export default function VeliLayout({ children }: { children: React.ReactNode }) 
               <Link key={item.href} href={item.href}
                 className={`flex-1 flex flex-col items-center py-2 text-xs font-medium ${active ? "text-purple-600" : "text-gray-500"}`}
               >
-                <item.icon className="w-5 h-5 mb-0.5" />{item.label}
+                <div className="relative">
+                  <item.icon className="w-5 h-5 mb-0.5" />
+                  {item.showBadge && unread > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </div>
+                {item.label}
               </Link>
             );
           })}

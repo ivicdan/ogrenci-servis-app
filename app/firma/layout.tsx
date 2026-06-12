@@ -1,26 +1,26 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus } from "lucide-react";
-import { getUserType, clearToken } from "@/lib/api-client";
+import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard } from "lucide-react";
+import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 
 const navItems = [
   { href: "/firma/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/firma/soforler", label: "Şoförler", icon: Bus },
   { href: "/firma/ogrenciler", label: "Öğrenciler", icon: GraduationCap },
-  { href: "/firma/mesajlar", label: "Mesajlar", icon: MessageSquare },
-  { href: "/firma/odemeler", label: "Ödemeler", icon: Settings },
+  { href: "/firma/mesajlar", label: "Mesajlar", icon: MessageSquare, showBadge: true },
+  { href: "/firma/odemeler", label: "Ödemeler", icon: CreditCard },
   { href: "/firma/ayarlar", label: "Ayarlar", icon: Settings },
 ];
 
-// Auth gerektirmeyen sayfalar
 const PUBLIC_PATHS = ["/firma/giris", "/firma/kayit", "/firma/evrak"];
 
 export default function FirmaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     if (!isPublic) {
@@ -31,6 +31,18 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
     }
   }, [isPublic, router]);
 
+  useEffect(() => {
+    if (isPublic) return;
+    const fetchCount = () => {
+      apiFetch<{ count: number }>("/api/firma/bildirimler/count").then(({ data }) => {
+        if (data) setUnread(data.count);
+      });
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, [isPublic]);
+
   if (isPublic) return <>{children}</>;
 
   function handleLogout() {
@@ -40,7 +52,6 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen">
-      {/* Sol sidebar — masaüstü */}
       <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 shadow-sm">
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -56,12 +67,17 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <div className="relative">
+                  <item.icon className="w-4 h-4" />
+                  {item.showBadge && unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </div>
                 {item.label}
               </Link>
             );
@@ -78,11 +94,8 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* İçerik */}
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-4 md:p-6">{children}</main>
-
-        {/* Alt navigasyon — mobil */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex">
           {navItems.slice(0, 4).map((item) => {
             const active = pathname.startsWith(item.href);
@@ -94,7 +107,14 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
                   active ? "text-blue-600" : "text-gray-500"
                 }`}
               >
-                <item.icon className="w-5 h-5 mb-0.5" />
+                <div className="relative">
+                  <item.icon className="w-5 h-5 mb-0.5" />
+                  {item.showBadge && unread > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </div>
                 {item.label}
               </Link>
             );

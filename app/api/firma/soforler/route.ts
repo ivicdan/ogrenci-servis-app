@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { generateUniqueDriverCode } from "@/lib/id-generator";
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
       !!(await prisma.driver.findUnique({ where: { driverCode: code } }))
   );
 
+  // 6 haneli rastgele şifre üret
+  const plainPassword = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
   const driver = await prisma.driver.create({
     data: {
       driverCode,
@@ -75,7 +80,7 @@ export async function POST(req: NextRequest) {
       plateNumber,
       assistantName,
       firmId: user.id,
-      password: "",
+      password: hashedPassword,
     },
     select: {
       id: true,
@@ -89,5 +94,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(driver, { status: 201 });
+  return NextResponse.json({ ...driver, plainPassword }, { status: 201 });
 }

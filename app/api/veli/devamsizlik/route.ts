@@ -9,9 +9,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { type } = await req.json();
-  // type: "PICKUP" (sabah servise binmeyecek) | "DROPOFF" (öğleden dönmeyecek)
+  // type: "PICKUP" | "DROPOFF" | "BOTH"
 
-  if (!type || !["PICKUP", "DROPOFF"].includes(type)) {
+  if (!type || !["PICKUP", "DROPOFF", "BOTH"].includes(type)) {
     return NextResponse.json({ error: "Geçersiz devamsızlık türü." }, { status: 400 });
   }
 
@@ -37,29 +37,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const attendance = await prisma.attendance.create({
-    data: {
+  const typeLabels: Record<string, string> = {
+    PICKUP: "sabah servise binmeyecek",
+    DROPOFF: "öğleden dönmeyecek",
+    BOTH: "bugün okula hiç gitmeyecek",
+  };
+
+  const types = type === "BOTH" ? ["PICKUP", "DROPOFF"] : [type];
+
+  for (const t of types) {
+    await prisma.attendance.create({
+      data: {
+        studentId: student.id,
+        driverId: student.driver.id,
+        type: t as "PICKUP" | "DROPOFF",
+        status: "NOTIFIED_ABSENT",
+        notifiedAt: new Date(),
+      },
+    });
+
+    emitAbsenceNotification({
       studentId: student.id,
       driverId: student.driver.id,
-      type: type as "PICKUP" | "DROPOFF",
-      status: "NOTIFIED_ABSENT",
-      notifiedAt: new Date(),
-    },
-  });
-
-  const typeLabel = type === "PICKUP" ? "sabah servise binmeyecek" : "öğleden dönmeyecek";
+      type: t,
+    });
+  }
 
   await createNotification({
     driverId: student.driver.id,
     title: "Devamsızlık Bildirimi",
-    body: `${parent.firstName} ${parent.lastName}'ın çocuğu ${student.firstName} bugün ${typeLabel}.`,
+    body: `${student.firstName} ${student.lastName} bugün ${typeLabels[type]}.`,
   });
 
-  emitAbsenceNotification({
-    studentId: student.id,
-    driverId: student.driver.id,
-    type,
-  });
-
-  return NextResponse.json(attendance, { status: 201 });
+  return NextResponse.json({ message: "Devamsızlık bildirimi gönderildi." }, { status: 201 });
 }

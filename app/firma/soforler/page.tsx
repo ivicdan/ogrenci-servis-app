@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Bus, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,17 +22,22 @@ interface Driver {
   _count: { students: number };
 }
 
+interface NewDriverResult extends Driver {
+  plainPassword: string;
+}
+
 const emptyForm = {
   firstName: "", lastName: "", phone: "", tcId: "",
   plateNumber: "", assistantName: "",
 };
 
 export default function FirmaSoforler() {
+  const router = useRouter();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [newDriver, setNewDriver] = useState<Driver | null>(null);
+  const [newDriver, setNewDriver] = useState<NewDriverResult | null>(null);
 
   useEffect(() => { loadDrivers(); }, []);
 
@@ -43,7 +49,7 @@ export default function FirmaSoforler() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await apiFetch<Driver>("/api/firma/soforler", {
+    const { data, error } = await apiFetch<NewDriverResult>("/api/firma/soforler", {
       method: "POST",
       body: JSON.stringify(form),
     });
@@ -79,21 +85,40 @@ export default function FirmaSoforler() {
 
           {newDriver ? (
             <div className="text-center py-4 space-y-4">
-              <div className="bg-green-50 rounded-2xl p-4">
+              <div className="bg-green-50 rounded-2xl p-4 space-y-3">
                 <p className="font-semibold text-gray-900">{newDriver.firstName} {newDriver.lastName}</p>
-                <p className="text-sm text-gray-500 mt-1">Şoför ID:</p>
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <span className="font-mono font-bold text-xl text-green-700 bg-green-100 px-3 py-1 rounded-xl">
-                    {newDriver.driverCode}
-                  </span>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(newDriver.driverCode); toast.success("Kopyalandı!"); }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Şoför ID</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="font-mono font-bold text-xl text-green-700 bg-green-100 px-3 py-1 rounded-xl">
+                      {newDriver.driverCode}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(newDriver.driverCode); toast.success("Kopyalandı!"); }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Bu ID'yi şoföre verin. Giriş için kullanacak.</p>
+
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Şifre</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="font-mono font-bold text-xl text-blue-700 bg-blue-100 px-3 py-1 rounded-xl">
+                      {newDriver.plainPassword}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(newDriver.plainPassword); toast.success("Kopyalandı!"); }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-2">Bu bilgileri şoföre verin. Şifre bir daha gösterilmeyecek.</p>
               </div>
               <Button onClick={handleClose} className="w-full">Tamam</Button>
             </div>
@@ -141,7 +166,11 @@ export default function FirmaSoforler() {
           </div>
         )}
         {drivers.map((driver) => (
-          <div key={driver.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div
+            key={driver.id}
+            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all"
+            onClick={() => router.push(`/firma/soforler/${driver.id}`)}
+          >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 rounded-xl p-2.5">

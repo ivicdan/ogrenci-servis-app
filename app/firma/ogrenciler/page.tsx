@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { GraduationCap, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ interface Student {
 }
 
 export default function FirmaOgrenciler() {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,11 @@ export default function FirmaOgrenciler() {
           </div>
         )}
         {students.map((s) => (
-          <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div
+            key={s.id}
+            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all"
+            onClick={() => router.push(`/firma/ogrenciler/${s.id}`)}
+          >
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="font-semibold text-gray-900">{s.firstName} {s.lastName}</p>
@@ -78,15 +84,19 @@ export default function FirmaOgrenciler() {
                   {s.status === "ACTIVE" ? "Aktif" : "Pasif"}
                 </Badge>
                 <span className="text-xs text-gray-500">
-                  {s.studyTime === "MORNING" ? "Sabah" : "Öğlen"}
+                  {s.studyTime === "MORNING" ? "Sabah" : "Öğleden Sonra"}
                 </span>
               </div>
             </div>
 
-            {s.driver && (
+            {s.driver ? (
               <div className="bg-gray-50 rounded-xl p-2.5 mb-2 text-xs text-gray-600">
                 🚌 {s.driver.firstName} {s.driver.lastName}
                 {s.driver.plateNumber && ` · ${s.driver.plateNumber}`}
+              </div>
+            ) : (
+              <div className="bg-orange-50 rounded-xl p-2.5 mb-2 text-xs text-orange-600">
+                ⚠ Şoför atanmamış
               </div>
             )}
 
@@ -96,7 +106,6 @@ export default function FirmaOgrenciler() {
                 {s.parent.spouseName && (
                   <p>👤 {s.parent.spouseName} · {s.parent.spousePhone}</p>
                 )}
-                <p>📍 {s.parent.address}</p>
               </div>
             )}
           </div>

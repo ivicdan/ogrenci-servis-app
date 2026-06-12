@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,32 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
-interface ParentData {
-  firstName: string;
-  lastName: string;
-  profession: string | null;
-  address: string;
-  spouseName: string | null;
-  spousePhone: string | null;
-  spouseProfession: string | null;
-  student: {
-    firstName: string;
-    lastName: string;
-    birthDate: string | null;
-    school: string;
-    class: string;
-    teacher: string | null;
-    studyTime: string;
-  };
-}
+const studyTimeLabel: Record<string, string> = {
+  MORNING: "Sabah",
+  AFTERNOON: "Öğleden Sonra",
+};
 
 export default function VeliProfil() {
+  const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({});
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiFetch<ParentData>("/api/veli/ogrenci").then(({ data }) => {
+    apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
       if (data) {
+        setPhone(data.phone ?? "");
         setForm({
           firstName: data.firstName ?? "",
           lastName: data.lastName ?? "",
@@ -41,13 +31,14 @@ export default function VeliProfil() {
           spouseName: data.spouseName ?? "",
           spousePhone: data.spousePhone ?? "",
           spouseProfession: data.spouseProfession ?? "",
-          studentFirstName: data.student.firstName ?? "",
-          studentLastName: data.student.lastName ?? "",
-          studentBirthDate: data.student.birthDate ? data.student.birthDate.slice(0, 10) : "",
-          studentSchool: data.student.school ?? "",
-          studentClass: data.student.class ?? "",
-          studentTeacher: data.student.teacher ?? "",
-          studentStudyTime: data.student.studyTime ?? "MORNING",
+          studentFirstName: data.student?.firstName ?? "",
+          studentLastName: data.student?.lastName ?? "",
+          studentBirthDate: data.student?.birthDate ? data.student.birthDate.slice(0, 10) : "",
+          studentSchool: data.student?.school ?? "",
+          studentClass: data.student?.class ?? "",
+          studentTeacher: data.student?.teacher ?? "",
+          studentPhone: data.student?.phone ?? "",
+          studentStudyTime: data.student?.studyTime ?? "MORNING",
         });
       }
     });
@@ -63,6 +54,7 @@ export default function VeliProfil() {
     setLoading(false);
     if (error) return toast.error(error);
     toast.success("Bilgiler güncellendi!");
+    router.push("/veli/dashboard");
   }
 
   const f = (k: string) => form[k] ?? "";
@@ -101,22 +93,33 @@ export default function VeliProfil() {
             <div>
               <Label>Öğrenim Saati</Label>
               <Select value={f("studentStudyTime")} onValueChange={(v) => s("studentStudyTime", v ?? "")}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1">
+                  <SelectValue>{studyTimeLabel[f("studentStudyTime")] || "Seçin"}</SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MORNING">Sabah</SelectItem>
-                  <SelectItem value="AFTERNOON">Öğlen</SelectItem>
+                  <SelectItem value="AFTERNOON">Öğleden Sonra</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label>Öğretmen Adı <span className="text-gray-400 text-xs">(Anaokulu için zorunlu)</span></Label>
+            <Label>Öğretmen Adı <span className="text-gray-400 text-xs">(Anaokulu için)</span></Label>
             <Input value={f("studentTeacher")} onChange={(e) => s("studentTeacher", e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label>Öğrenci Cep Telefonu <span className="text-gray-400 text-xs">(Varsa)</span></Label>
+            <Input type="tel" placeholder="05XX XXX XX XX" value={f("studentPhone")} onChange={(e) => s("studentPhone", e.target.value)} className="mt-1" />
           </div>
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
           <h2 className="font-semibold text-gray-900 text-sm">VELİ BİLGİLERİ</h2>
+          <div>
+            <Label>Telefon Numarası</Label>
+            <Input value={phone} disabled className="mt-1 bg-gray-50 text-gray-500" />
+            <p className="text-xs text-gray-400 mt-1">Giriş numaranız, değiştirilemez.</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Ad</Label>

@@ -120,6 +120,7 @@ model Student {
   school      String
   class       String
   teacher     String?
+  phone       String?
   studyTime   StudyTime
   status      StudentStatus @default(ACTIVE)
   parent      Parent?

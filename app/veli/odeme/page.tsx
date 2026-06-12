@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CreditCard, Calendar, AlertTriangle } from "lucide-react";
+import { CreditCard, Calendar, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,14 +31,18 @@ export default function VeliOdeme() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentDay, setPaymentDay] = useState<number | null>(null);
   const [newDay, setNewDay] = useState("");
-  const [selected, setSelected] = useState<Payment | null>(null);
-  const [payForm, setPayForm] = useState({ paidDate: "", method: "BANK_TRANSFER" });
+  const [iban, setIban] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [payForm, setPayForm] = useState({ amount: "", paidDate: new Date().toISOString().slice(0, 10), method: "BANK_TRANSFER" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadPayments();
-    apiFetch<{ paymentDay: number | null }>("/api/veli/ogrenci").then(({ data }) => {
-      if (data && (data as any).paymentDay) setPaymentDay((data as any).paymentDay);
+    apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
+      if (data) {
+        if (data.paymentDay) setPaymentDay(data.paymentDay);
+        if (data.student?.firm?.iban) setIban(data.student.firm.iban);
+      }
     });
   }, []);
 
@@ -62,22 +66,37 @@ export default function VeliOdeme() {
 
   async function handlePayment(e: React.FormEvent) {
     e.preventDefault();
-    if (!selected) return;
     setLoading(true);
     const { error } = await apiFetch("/api/veli/odeme", {
       method: "POST",
-      body: JSON.stringify({ paymentId: selected.id, ...payForm }),
+      body: JSON.stringify(payForm),
     });
     setLoading(false);
     if (error) return toast.error(error);
-    toast.success("Ödeme bildirimi gönderildi!");
-    setSelected(null);
+    toast.success("Ödeme bildirimi gönderildi! Firma onayı bekleniyor.");
+    setOpen(false);
+    setPayForm({ amount: "", paidDate: new Date().toISOString().slice(0, 10), method: "BANK_TRANSFER" });
     loadPayments();
   }
 
   return (
     <div className="max-w-md mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Ödemelerim</h1>
+
+      {iban && (
+        <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+          <p className="text-xs font-semibold text-blue-700 mb-1">ÖDEME YAPILACAK IBAN</p>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm text-blue-900 font-bold">{iban}</span>
+            <button
+              onClick={() => { navigator.clipboard.writeText(iban); toast.success("IBAN kopyalandı!"); }}
+              className="text-blue-400 hover:text-blue-600 flex-shrink-0"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 mb-3">
@@ -98,10 +117,24 @@ export default function VeliOdeme() {
         </form>
       </div>
 
-      <Dialog open={!!selected} onOpenChange={(v) => { if (!v) setSelected(null); }}>
+      <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => setOpen(true)}>
+        <CreditCard className="w-4 h-4 mr-2" /> Ödeme Bildir
+      </Button>
+
+      <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false); }}>
         <DialogContent className="max-w-sm mx-auto">
           <DialogHeader><DialogTitle>Ödeme Bildir</DialogTitle></DialogHeader>
           <form onSubmit={handlePayment} className="space-y-4">
+            <div>
+              <Label>Ödeme Tutarı (TL)</Label>
+              <Input
+                type="number" min="1" step="0.01"
+                placeholder="Örn: 1500"
+                value={payForm.amount}
+                onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })}
+                required className="mt-1"
+              />
+            </div>
             <div>
               <Label>Ödeme Tarihi</Label>
               <Input type="date" value={payForm.paidDate}
@@ -111,16 +144,17 @@ export default function VeliOdeme() {
             <div>
               <Label>Ödeme Yöntemi</Label>
               <Select value={payForm.method} onValueChange={(v) => setPayForm({ ...payForm, method: v ?? "" })}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1">
+                  <SelectValue>{methodLabel[payForm.method] || "Seçin"}</SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BANK_TRANSFER">Havale / EFT</SelectItem>
                   <SelectItem value="CASH">Nakit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-gray-500 flex gap-1 items-start">
-              <AlertTriangle className="w-3.5 h-3.5 text-yellow-500 mt-0.5 flex-shrink-0" />
-              Ödemeniz firma onayından sonra görünecek.
+            <p className="text-xs text-gray-500">
+              Ödemeniz firma tarafından onaylandıktan sonra onaylı görünecek.
             </p>
             <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
               {loading ? "Gönderiliyor..." : "Bildir"}
@@ -133,33 +167,22 @@ export default function VeliOdeme() {
         {payments.length === 0 && (
           <div className="text-center py-8 text-gray-400">
             <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p>Ödeme kaydı yok</p>
+            <p>Henüz ödeme bildirimi yok</p>
           </div>
         )}
         {payments.map((p) => (
           <div key={p.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <p className="font-bold text-gray-900">{Number(p.amount).toLocaleString("tr-TR")} TL</p>
-                <p className="text-xs text-gray-500">
-                  Son ödeme: {new Date(p.dueDate).toLocaleDateString("tr-TR")}
-                </p>
-              </div>
+            <div className="flex items-start justify-between mb-1">
+              <p className="font-bold text-gray-900">{Number(p.amount).toLocaleString("tr-TR")} TL</p>
               <Badge variant={statusLabel[p.status]?.color ?? "secondary"} className="text-xs">
                 {statusLabel[p.status]?.label}
               </Badge>
             </div>
-            {p.paidDate && p.status !== "PENDING" && (
+            {p.paidDate && (
               <p className="text-xs text-gray-500">
-                Ödendi: {new Date(p.paidDate).toLocaleDateString("tr-TR")}
+                Tarih: {new Date(p.paidDate).toLocaleDateString("tr-TR")}
                 {p.method && ` · ${methodLabel[p.method]}`}
               </p>
-            )}
-            {p.status === "PENDING" && (
-              <Button size="sm" className="w-full mt-2 bg-purple-600 hover:bg-purple-700"
-                onClick={() => { setSelected(p); setPayForm({ paidDate: new Date().toISOString().slice(0, 10), method: "BANK_TRANSFER" }); }}>
-                Ödeme Bildir
-              </Button>
             )}
           </div>
         ))}
