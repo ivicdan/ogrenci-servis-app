@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Bus, ArrowLeft, GraduationCap, Phone, Route, Pencil, Trash2 } from "lucide-react";
+import { Bus, ArrowLeft, GraduationCap, Phone, Route, Pencil, Trash2, Copy, KeyRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,8 @@ export default function SoforDetay() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [editForm, setEditForm] = useState({ firstName: "", lastName: "", phone: "", plateNumber: "", assistantName: "" });
   const [saving, setSaving] = useState(false);
+  const [resetPassword, setResetPassword] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     apiFetch<DriverDetail>(`/api/firma/soforler/${params.id}`)
@@ -70,6 +72,14 @@ export default function SoforDetay() {
     if (driver) setDriver({ ...driver, ...editForm, plateNumber: editForm.plateNumber || null, assistantName: editForm.assistantName || null });
   }
 
+  async function handleResetPassword() {
+    setResetting(true);
+    const { data, error } = await apiFetch<{ plainPassword: string }>(`/api/firma/soforler/${params.id}`, { method: "PATCH" });
+    setResetting(false);
+    if (error) return toast.error(error);
+    if (data) setResetPassword(data.plainPassword);
+  }
+
   async function handleDelete() {
     const { error } = await apiFetch(`/api/firma/soforler/${params.id}`, { method: "DELETE" });
     if (error) return toast.error(error);
@@ -87,6 +97,9 @@ export default function SoforDetay() {
           <ArrowLeft className="w-4 h-4" /> Geri
         </button>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={handleResetPassword} disabled={resetting}>
+            <KeyRound className="w-3.5 h-3.5 mr-1" /> {resetting ? "..." : "Şifreyi Sıfırla"}
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
             <Pencil className="w-3.5 h-3.5 mr-1" /> Düzenle
           </Button>
@@ -133,6 +146,36 @@ export default function SoforDetay() {
         </DialogContent>
       </Dialog>
 
+      {/* Şifre Sıfırlama Sonuç Dialog */}
+      <Dialog open={!!resetPassword} onOpenChange={(v) => { if (!v) setResetPassword(null); }}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader><DialogTitle>Yeni Şifre Oluşturuldu</DialogTitle></DialogHeader>
+          <div className="bg-green-50 rounded-2xl p-4 space-y-3 text-center">
+            <p className="text-sm text-gray-600">{driver.firstName} {driver.lastName} için yeni giriş bilgileri:</p>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Şoför ID</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-mono font-bold text-lg text-green-700 bg-green-100 px-3 py-1 rounded-xl">{driver.driverCode}</span>
+                <button onClick={() => { navigator.clipboard.writeText(driver.driverCode); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Yeni Şifre</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-mono font-bold text-lg text-blue-700 bg-blue-100 px-3 py-1 rounded-xl">{resetPassword}</span>
+                <button onClick={() => { navigator.clipboard.writeText(resetPassword!); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">Bu bilgileri şoföre verin. Şifre bir daha gösterilmeyecek.</p>
+          </div>
+          <Button onClick={() => setResetPassword(null)} className="w-full">Tamam</Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Silme Onay Dialog */}
       <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
         <DialogContent className="max-w-sm mx-auto">
@@ -170,6 +213,25 @@ export default function SoforDetay() {
             </div>
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Giriş Bilgileri</p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Şoför ID <span className="text-gray-400">(giriş için)</span></p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-lg text-sm">{driver.driverCode}</span>
+                <button onClick={() => { navigator.clipboard.writeText(driver.driverCode); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Şifre</p>
+              <p className="text-xs text-gray-400 mt-0.5 italic">Gizli — "Şifreyi Sıfırla" ile yenile</p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-4 mt-4 pt-4 border-t border-gray-100 text-center">
           <div className="flex-1"><p className="text-2xl font-bold text-gray-900">{driver._count.students}</p><p className="text-xs text-gray-500">Öğrenci</p></div>
           <div className="flex-1"><p className="text-2xl font-bold text-gray-900">{driver._count.routes}</p><p className="text-xs text-gray-500">Güzergah</p></div>

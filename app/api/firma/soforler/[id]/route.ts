@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
@@ -70,6 +71,24 @@ export async function PUT(
   });
 
   return NextResponse.json(updated);
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = requireAuth(req, ["FIRM"]);
+  if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
+
+  const { id } = await params;
+  const driver = await prisma.driver.findFirst({ where: { id, firmId: user.id } });
+  if (!driver) return NextResponse.json({ error: "Şoför bulunamadı." }, { status: 404 });
+
+  const plainPassword = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
+  await prisma.driver.update({ where: { id }, data: { password: hashedPassword } });
+
+  return NextResponse.json({ plainPassword });
 }
 
 export async function DELETE(
