@@ -65,6 +65,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Bu öğrenciye ait veli kaydı zaten varsa engelle
+    const studentParent = await prisma.parent.findUnique({
+      where: { studentId: student.id },
+    });
+    if (studentParent) {
+      return NextResponse.json(
+        { error: "Bu öğrenciye ait bir veli kaydı zaten mevcut. Giriş yapmayı deneyin." },
+        { status: 409 }
+      );
+    }
+
     const hashed = await bcrypt.hash(password, 10);
 
     const parent = await prisma.parent.create({
