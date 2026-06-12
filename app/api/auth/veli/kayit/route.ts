@@ -82,7 +82,8 @@ export async function POST(req: NextRequest) {
     const token = signToken({ id: parent.id, userType: "PARENT" });
 
     return NextResponse.json({ token, studentId: student.id }, { status: 201 });
-  } catch {
+  } catch (e) {
+    console.error("[veli/kayit]", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
   }
 }
