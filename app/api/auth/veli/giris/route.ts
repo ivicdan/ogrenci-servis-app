@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
         student: parent.student,
       },
     });
-  } catch {
+  } catch (e) {
+    console.error("[veli/giris]", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
   }
 }
