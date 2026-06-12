@@ -72,7 +72,9 @@ export default function SoforGuzergahlar() {
             <div>
               <Label>Tür</Label>
               <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v ?? "" })}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1">
+                  <SelectValue>{routeTypeLabel[form.type]}</SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   {Object.entries(routeTypeLabel).map(([v, l]) => (
                     <SelectItem key={v} value={v}>{l}</SelectItem>

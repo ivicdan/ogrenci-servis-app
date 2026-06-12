@@ -136,6 +136,9 @@ export default function VeliKayit() {
           Hesabınız var mı?{" "}
           <Link href="/veli/giris" className="text-purple-600 font-medium">Giriş Yap</Link>
         </div>
+        <div className="mt-2 text-center">
+          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← Ana sayfaya dön</Link>
+        </div>
       </div>
     </div>
   );
