@@ -1,0 +1,103 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/db";
+import { generateOtpCode, sendOtp } from "@/lib/sms";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { firmCode, studentTcId, phone, password } = await req.json();
+
+    if (!firmCode || !studentTcId || !phone || !password) {
+      return NextResponse.json(
+        { error: "Firma ID, öğrenci TC, telefon ve şifre zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    // Firma ID zorunlu kontrolü
+    const firm = await prisma.firm.findUnique({ where: { firmCode } });
+    if (!firm) {
+      return NextResponse.json(
+        { error: "Geçersiz Firma ID. Lütfen servis firmanızdan doğru ID'yi alın." },
+        { status: 404 }
+      );
+    }
+    if (firm.status !== "ACTIVE") {
+      return NextResponse.json(
+        { error: "Bu firma henüz aktif değil." },
+        { status: 403 }
+      );
+    }
+
+    // Başka firmada aktif öğrenci kontrolü
+    const existingStudent = await prisma.student.findFirst({
+      where: { tcId: studentTcId, status: "ACTIVE" },
+      include: { firm: { select: { firmCode: true } } },
+    });
+
+    if (existingStudent && existingStudent.firmId !== firm.id) {
+      return NextResponse.json(
+        {
+          error: `Bu TC kimlik numarası başka bir firmada (${existingStudent.firm.firmCode}) aktif öğrenci olarak kayıtlı.`,
+        },
+        { status: 409 }
+      );
+    }
+
+    // Telefon daha önce veli olarak kayıtlı mı?
+    const existingParent = await prisma.parent.findUnique({ where: { phone } });
+    if (existingParent) {
+      return NextResponse.json(
+        { error: "Bu telefon numarası zaten kayıtlı." },
+        { status: 409 }
+      );
+    }
+
+    // Öğrenci yoksa oluştur; varsa mevcut kaydı kullan
+    let student = existingStudent;
+    if (!student) {
+      student = await prisma.student.create({
+        data: {
+          tcId: studentTcId,
+          firmId: firm.id,
+          firstName: "",
+          lastName: "",
+          birthDate: new Date(),
+          school: "",
+          class: "",
+          studyTime: "MORNING",
+        },
+        include: { firm: { select: { firmCode: true } } },
+      });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const otpCode = generateOtpCode();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 dk
+
+    await prisma.parent.create({
+      data: {
+        studentId: student.id,
+        firstName: "",
+        lastName: "",
+        phone,
+        password: hashed,
+        address: "",
+        otpCode,
+        otpExpiry,
+      },
+    });
+
+    await sendOtp(phone, otpCode);
+
+    return NextResponse.json(
+      {
+        message: "Doğrulama kodu telefonunuza gönderildi.",
+        studentId: student.id,
+      },
+      { status: 201 }
+    );
+  } catch {
+    return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
+  }
+}

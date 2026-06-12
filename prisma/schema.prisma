@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── ENUMS ─────────────────────────────
+
+enum FirmStatus {
+  PRE_REGISTERED
+  ACTIVE
+  SUSPENDED
+}
+
+enum DriverStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudyTime {
+  MORNING
+  AFTERNOON
+}
+
+enum RouteType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  AFTERNOON_PICKUP
+  AFTERNOON_DROPOFF
+}
+
+enum AttendanceType {
+  PICKUP
+  DROPOFF
+}
+
+enum AttendanceStatus {
+  PENDING
+  PICKED_UP
+  ABSENT
+  NOTIFIED_ABSENT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+}
+
+// ───────────────────────────── MODELS ─────────────────────────────
+
+model Firm {
+  id            String         @id @default(uuid())
+  firmCode      String         @unique
+  taxOrTcId     String         @unique
+  phone         String         @unique
+  password      String
+  status        FirmStatus     @default(PRE_REGISTERED)
+  name          String?
+  address       String?
+  iban          String?
+  documents     Json?
+  drivers       Driver[]
+  students      Student[]
+  messages      Message[]
+  payments      Payment[]
+  notifications Notification[]
+  routes        Route[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Driver {
+  id            String         @id @default(uuid())
+  driverCode    String         @unique
+  tcId          String
+  phone         String
+  password      String
+  firstName     String
+  lastName      String
+  plateNumber   String?
+  assistantName String?
+  firmId        String
+  firm          Firm           @relation(fields: [firmId], references: [id])
+  status        DriverStatus   @default(ACTIVE)
+  routes        Route[]
+  students      Student[]
+  attendances   Attendance[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Student {
+  id          String        @id @default(uuid())
+  tcId        String
+  firmId      String
+  firm        Firm          @relation(fields: [firmId], references: [id])
+  driverId    String?
+  driver      Driver?       @relation(fields: [driverId], references: [id])
+  routeId     String?
+  route       Route?        @relation(fields: [routeId], references: [id])
+  firstName   String
+  lastName    String
+  birthDate   DateTime
+  photoUrl    String?
+  school      String
+  class       String
+  teacher     String?
+  studyTime   StudyTime
+  status      StudentStatus @default(ACTIVE)
+  parent      Parent?
+  attendances Attendance[]
+  payments    Payment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Parent {
+  id               String         @id @default(uuid())
+  studentId        String         @unique
+  student          Student        @relation(fields: [studentId], references: [id])
+  firstName        String
+  lastName         String
+  phone            String         @unique
+  password         String
+  phoneVerified    Boolean        @default(false)
+  otpCode          String?
+  otpExpiry        DateTime?
+  profession       String?
+  address          String
+  spouseName       String?
+  spousePhone      String?
+  spouseProfession String?
+  paymentDay       Int?
+  notifications    Notification[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model Route {
+  id        String    @id @default(uuid())
+  name      String
+  type      RouteType
+  driverId  String
+  driver    Driver    @relation(fields: [driverId], references: [id])
+  firmId    String
+  firm      Firm      @relation(fields: [firmId], references: [id])
+  students  Student[]
+  stops     Stop[]
+  createdAt DateTime  @default(now())
+}
+
+model Stop {
+  id        String @id @default(uuid())
+  routeId   String
+  route     Route  @relation(fields: [routeId], references: [id])
+  address   String
+  latitude  Float?
+  longitude Float?
+  order     Int
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  studentId  String
+  student    Student          @relation(fields: [studentId], references: [id])
+  driverId   String
+  driver     Driver           @relation(fields: [driverId], references: [id])
+  date       DateTime         @default(now())
+  type       AttendanceType
+  status     AttendanceStatus @default(PENDING)
+  notifiedAt DateTime?
+  createdAt  DateTime         @default(now())
+}
+
+model Payment {
+  id        String         @id @default(uuid())
+  studentId String
+  student   Student        @relation(fields: [studentId], references: [id])
+  firmId    String
+  firm      Firm           @relation(fields: [firmId], references: [id])
+  amount    Decimal        @db.Decimal(10, 2)
+  dueDate   DateTime
+  paidDate  DateTime?
+  method    PaymentMethod?
+  status    PaymentStatus  @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  firmId    String?
+  firm      Firm?    @relation(fields: [firmId], references: [id])
+  driverId  String?
+  driver    Driver?  @relation(fields: [driverId], references: [id])
+  parentId  String?
+  parent    Parent?  @relation(fields: [parentId], references: [id])
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id         String             @id @default(uuid())
+  firmId     String
+  firm       Firm               @relation(fields: [firmId], references: [id])
+  title      String
+  body       String
+  recipients MessageRecipient[]
+  createdAt  DateTime           @default(now())
+}
+
+model MessageRecipient {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id])
+  userId    String
+  userType  String
+  read      Boolean @default(false)
+}
