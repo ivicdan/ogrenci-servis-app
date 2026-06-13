@@ -21,28 +21,43 @@ export async function GET(req: NextRequest) {
       phone: true,
       paymentDay: true,
       student: {
-        select: { id: true, firstName: true, lastName: true, school: true, class: true },
-      },
-      payments: {
-        where: { status: "APPROVED", createdAt: { gte: cutoff } },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, status: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          school: true,
+          class: true,
+          payments: {
+            where: { status: "APPROVED", createdAt: { gte: cutoff } },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { id: true },
+          },
+        },
       },
     },
   });
 
-  const overdue = parents.filter((p) => {
-    const payDay = p.paymentDay!;
-    const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
-    const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays >= 5 && p.payments.length === 0;
-  }).map((p) => {
-    const payDay = p.paymentDay!;
-    const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
-    const daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    return { ...p, daysLate };
-  });
+  const overdue = parents
+    .filter((p) => {
+      const payDay = p.paymentDay!;
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
+      const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 5 && p.student.payments.length === 0;
+    })
+    .map((p) => {
+      const payDay = p.paymentDay!;
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
+      const daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        parentId: p.id,
+        parentName: `${p.firstName} ${p.lastName}`,
+        studentId: p.student.id,
+        studentName: `${p.student.firstName} ${p.student.lastName}`,
+        paymentDay: payDay,
+        daysLate,
+      };
+    });
 
   return NextResponse.json(overdue);
 }

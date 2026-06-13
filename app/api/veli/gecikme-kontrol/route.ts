@@ -10,13 +10,17 @@ export async function GET(req: NextRequest) {
     where: { id: user.id },
     select: {
       paymentDay: true,
-      payments: {
-        where: {
-          status: "APPROVED",
-          createdAt: { gte: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) },
+      student: {
+        select: {
+          payments: {
+            where: {
+              status: "APPROVED",
+              createdAt: { gte: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) },
+            },
+            take: 1,
+            select: { id: true },
+          },
         },
-        take: 1,
-        select: { id: true },
       },
     },
   });
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
   const today = new Date();
   const dueDate = new Date(today.getFullYear(), today.getMonth(), parent.paymentDay);
   const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-  const overdue = diffDays >= 5 && parent.payments.length === 0;
+  const overdue = diffDays >= 5 && parent.student.payments.length === 0;
 
   return NextResponse.json({ overdue, daysLate: overdue ? diffDays : 0 });
 }
