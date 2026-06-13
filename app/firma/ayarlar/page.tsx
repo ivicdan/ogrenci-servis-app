@@ -33,6 +33,10 @@ export default function FirmaAyarlar() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    const ibanDigits = form.iban.replace(/\D/g, "");
+    if (form.iban && ibanDigits.length !== 16) {
+      return toast.error("Lütfen 16 haneli ibanınızı yazınız.");
+    }
     setLoading(true);
     const { error } = await apiFetch("/api/firma/profil", {
       method: "PUT",
@@ -75,12 +79,13 @@ export default function FirmaAyarlar() {
         <div>
           <Label>IBAN</Label>
           <Input
-            placeholder="TR00 0000 0000 0000 0000 0000 00"
+            placeholder="16 haneli IBAN numaranız"
             value={form.iban}
             onChange={(e) => setForm({ ...form, iban: e.target.value })}
             className="mt-1 font-mono"
+            maxLength={26}
           />
-          <p className="text-xs text-gray-400 mt-1">Veliler bu IBAN'a ödeme yapacak.</p>
+          <p className="text-xs text-gray-400 mt-1">Lütfen 16 haneli ibanınızı yazınız. Veliler bu IBAN'a ödeme yapacak.</p>
         </div>
         <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
           {loading ? "Kaydediliyor..." : "Kaydet"}

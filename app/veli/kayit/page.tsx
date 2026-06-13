@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
+function validatePhone(phone: string) {
+  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+}
+
 export default function VeliKayit() {
   const router = useRouter();
   const [form, setForm] = useState({ firmCode: "", studentTcId: "", phone: "", password: "", passwordConfirm: "" });
@@ -17,6 +21,7 @@ export default function VeliKayit() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!validatePhone(form.phone)) return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
     setLoading(true);
     const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/kayit", {
@@ -62,9 +67,10 @@ export default function VeliKayit() {
           </div>
           <div>
             <Label>Cep Telefonu</Label>
-            <Input type="tel" placeholder="05XX XXX XX XX"
+            <Input type="tel" placeholder="5XXXXXXXXX (10 haneli)"
               value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required className="mt-1" />
+              required className="mt-1" maxLength={10} />
+            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
           </div>
           <div>
             <Label>Şifre</Label>

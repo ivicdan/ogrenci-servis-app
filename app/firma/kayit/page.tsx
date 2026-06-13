@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
+function validatePhone(phone: string) {
+  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+}
+
 export default function FirmaKayit() {
   const router = useRouter();
   const [form, setForm] = useState({ taxOrTcId: "", phone: "", password: "", passwordConfirm: "" });
@@ -17,6 +21,9 @@ export default function FirmaKayit() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validatePhone(form.phone)) {
+      return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
+    }
     if (form.password !== form.passwordConfirm) {
       return toast.error("Şifreler eşleşmiyor.");
     }
@@ -26,7 +33,6 @@ export default function FirmaKayit() {
       { method: "POST", body: JSON.stringify(form) }
     );
     setLoading(false);
-
     if (error) return toast.error(error);
     if (data?.token) {
       setToken(data.token);
@@ -50,59 +56,34 @@ export default function FirmaKayit() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="taxOrTcId">Vergi No / TC Kimlik No</Label>
-            <Input
-              id="taxOrTcId"
-              placeholder="Vergi veya TC numaranız"
-              value={form.taxOrTcId}
-              onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value })}
-              required
-              className="mt-1"
-            />
+            <Input id="taxOrTcId" placeholder="Vergi veya TC numaranız"
+              value={form.taxOrTcId} onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value })}
+              required className="mt-1" />
           </div>
           <div>
             <Label htmlFor="phone">Cep Telefonu</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="05XX XXX XX XX"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required
-              className="mt-1"
-            />
+            <Input id="phone" type="tel" placeholder="5XXXXXXXXX (10 haneli)"
+              value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required className="mt-1" maxLength={10} />
+            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>
             <div className="relative mt-1">
-              <Input
-                id="password"
-                type={showPass ? "text" : "password"}
-                placeholder="En az 6 karakter"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                minLength={6}
-                required
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                onClick={() => setShowPass(!showPass)}
-              >
+              <Input id="password" type={showPass ? "text" : "password"} placeholder="En az 6 karakter"
+                value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
+                minLength={6} required />
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                onClick={() => setShowPass(!showPass)}>
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
           <div>
             <Label htmlFor="passwordConfirm">Şifre Tekrar</Label>
-            <Input
-              id="passwordConfirm"
-              type="password"
-              placeholder="Şifrenizi tekrar girin"
-              value={form.passwordConfirm}
-              onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
-              required
-              className="mt-1"
-            />
+            <Input id="passwordConfirm" type="password" placeholder="Şifrenizi tekrar girin"
+              value={form.passwordConfirm} onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
+              required className="mt-1" />
           </div>
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading ? "Kaydediliyor..." : "Kayıt Ol"}
@@ -111,9 +92,7 @@ export default function FirmaKayit() {
 
         <div className="mt-4 text-center text-sm text-gray-500">
           Zaten hesabınız var mı?{" "}
-          <Link href="/firma/giris" className="text-blue-600 font-medium">
-            Giriş Yap
-          </Link>
+          <Link href="/firma/giris" className="text-blue-600 font-medium">Giriş Yap</Link>
         </div>
       </div>
     </div>

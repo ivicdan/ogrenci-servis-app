@@ -11,11 +11,18 @@ export async function GET(req: NextRequest) {
     where: { firmId: user.id },
     include: {
       _count: { select: { recipients: true } },
+      recipients: { select: { read: true } },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(messages);
+  const result = messages.map((m) => ({
+    ...m,
+    readCount: m.recipients.filter((r) => r.read).length,
+    recipients: undefined,
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest) {

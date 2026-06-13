@@ -82,6 +82,16 @@ export default function SoforLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <div className="flex-1 flex flex-col">
+        <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bus className="w-5 h-5 text-green-600" />
+            <span className="font-bold text-gray-900 text-sm">Şoför Paneli</span>
+          </div>
+          <button onClick={() => { clearToken(); router.push("/sofor/giris"); }} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors">
+            <LogOut className="w-4 h-4" />
+            <span>Çıkış</span>
+          </button>
+        </header>
         <main className="flex-1 p-4 md:p-6">{children}</main>
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex">
           {navItems.map((item) => {

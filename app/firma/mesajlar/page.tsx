@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ interface Message {
   title: string;
   body: string;
   createdAt: string;
+  readCount: number;
   _count: { recipients: number };
 }
 
@@ -24,7 +25,11 @@ export default function FirmaMesajlar() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { loadMessages(); }, []);
+  useEffect(() => {
+    loadMessages();
+    // Mesajlar sayfası açıldığında bildirimleri okundu işaretle
+    apiFetch("/api/firma/bildirimler", { method: "PUT" });
+  }, []);
 
   async function loadMessages() {
     const { data } = await apiFetch<Message[]>("/api/firma/mesaj");
@@ -102,24 +107,32 @@ export default function FirmaMesajlar() {
             <p>Henüz mesaj gönderilmemiş</p>
           </div>
         )}
-        {messages.map((m) => (
-          <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-semibold text-gray-900">{m.title}</p>
-                <p className="text-sm text-gray-600 mt-1">{m.body}</p>
+        {messages.map((m) => {
+          const total = m._count.recipients;
+          const read = m.readCount;
+          const allRead = total > 0 && read === total;
+          return (
+            <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{m.title}</p>
+                  <p className="text-sm text-gray-600 mt-1">{m.body}</p>
+                </div>
+                <div className="ml-3 text-right flex-shrink-0">
+                  <div className={`flex items-center gap-1 text-xs font-medium ${allRead ? "text-green-600" : "text-gray-400"}`}>
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>{read}/{total} okundu</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-xs text-gray-400 whitespace-nowrap ml-3">
-                {m._count.recipients} kişi
-              </span>
+              <p className="text-xs text-gray-400 mt-2">
+                {new Date(m.createdAt).toLocaleDateString("tr-TR", {
+                  day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              {new Date(m.createdAt).toLocaleDateString("tr-TR", {
-                day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
-              })}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
