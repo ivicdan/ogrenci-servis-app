@@ -10,7 +10,10 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
 function validatePhone(phone: string) {
-  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
+}
+function validateTcId(tc: string) {
+  return /^\d{11}$/.test(tc.replace(/\s/g, ""));
 }
 
 export default function VeliKayit() {
@@ -21,7 +24,8 @@ export default function VeliKayit() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (!validatePhone(form.phone)) return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
+    if (!validateTcId(form.studentTcId)) return toast.error("Öğrenci TC kimlik numarası 11 haneli olmalıdır.");
+    if (!validatePhone(form.phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
     setLoading(true);
     const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/kayit", {
@@ -61,16 +65,20 @@ export default function VeliKayit() {
           </div>
           <div>
             <Label>Öğrenci TC Kimlik No</Label>
-            <Input placeholder="Öğrenciye ait TC kimlik numarası"
-              value={form.studentTcId} onChange={(e) => setForm({ ...form, studentTcId: e.target.value })}
-              required className="mt-1" />
+            <Input
+              placeholder="11 haneli TC kimlik numarası"
+              value={form.studentTcId}
+              onChange={(e) => setForm({ ...form, studentTcId: e.target.value.replace(/\D/g, "") })}
+              required className="mt-1" maxLength={11} inputMode="numeric" />
+            <p className="text-xs text-gray-400 mt-1">Tam olarak 11 rakam giriniz.</p>
           </div>
           <div>
             <Label>Cep Telefonu</Label>
-            <Input type="tel" placeholder="5XXXXXXXXX (10 haneli)"
-              value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required className="mt-1" maxLength={10} />
-            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
+            <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
+              required className="mt-1" maxLength={11} />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
           </div>
           <div>
             <Label>Şifre</Label>

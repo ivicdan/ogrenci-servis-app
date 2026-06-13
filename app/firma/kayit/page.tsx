@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 function validatePhone(phone: string) {
-  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
 }
 
 export default function FirmaKayit() {
@@ -22,7 +22,7 @@ export default function FirmaKayit() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validatePhone(form.phone)) {
-      return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
+      return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
     }
     if (form.password !== form.passwordConfirm) {
       return toast.error("Şifreler eşleşmiyor.");
@@ -62,10 +62,10 @@ export default function FirmaKayit() {
           </div>
           <div>
             <Label htmlFor="phone">Cep Telefonu</Label>
-            <Input id="phone" type="tel" placeholder="5XXXXXXXXX (10 haneli)"
-              value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required className="mt-1" maxLength={10} />
-            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
+            <Input id="phone" type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız"
+              value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
+              required className="mt-1" maxLength={11} />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>

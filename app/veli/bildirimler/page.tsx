@@ -26,7 +26,14 @@ export default function VeliBildirimler() {
   async function markAllRead() {
     await apiFetch("/api/veli/bildirimler", { method: "PUT" });
     toast.success("Tümü okundu olarak işaretlendi.");
-    loadNotifications();
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }
+
+  async function markRead(id: string) {
+    const notif = notifications.find((n) => n.id === id);
+    if (!notif || notif.read) return;
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    await apiFetch(`/api/veli/bildirimler/${id}`, { method: "PATCH" });
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -53,8 +60,12 @@ export default function VeliBildirimler() {
           </div>
         )}
         {notifications.map((n) => (
-          <div key={n.id}
-            className={`bg-white rounded-2xl p-4 border ${!n.read ? "border-purple-200 bg-purple-50" : "border-gray-100"}`}
+          <div
+            key={n.id}
+            onClick={() => markRead(n.id)}
+            className={`bg-white rounded-2xl p-4 border cursor-pointer transition-all ${
+              !n.read ? "border-purple-200 bg-purple-50 hover:bg-purple-100" : "border-gray-100 hover:bg-gray-50"
+            }`}
           >
             <div className="flex items-start gap-2">
               {!n.read && <div className="w-2 h-2 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />}

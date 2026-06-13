@@ -27,7 +27,10 @@ interface NewDriverResult extends Driver {
 }
 
 function validatePhone(phone: string) {
-  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
+}
+function validateTcId(tc: string) {
+  return /^\d{11}$/.test(tc.replace(/\s/g, ""));
 }
 
 const emptyForm = {
@@ -52,7 +55,8 @@ export default function FirmaSoforler() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!validatePhone(form.phone)) return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
+    if (!validateTcId(form.tcId)) return toast.error("TC kimlik numarası tam olarak 11 haneli olmalıdır.");
+    if (!validatePhone(form.phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
     setLoading(true);
     const { data, error } = await apiFetch<NewDriverResult>("/api/firma/soforler", {
       method: "POST",
@@ -141,12 +145,17 @@ export default function FirmaSoforler() {
               </div>
               <div>
                 <Label>TC Kimlik No</Label>
-                <Input value={form.tcId} onChange={(e) => setForm({ ...form, tcId: e.target.value })} required className="mt-1" />
+                <Input
+                  placeholder="11 haneli TC kimlik numarası"
+                  value={form.tcId}
+                  onChange={(e) => setForm({ ...form, tcId: e.target.value.replace(/\D/g, "") })}
+                  required className="mt-1" maxLength={11} inputMode="numeric" />
+                <p className="text-xs text-gray-400 mt-1">Tam olarak 11 rakam giriniz.</p>
               </div>
               <div>
                 <Label>Telefon</Label>
-                <Input type="tel" placeholder="5XXXXXXXXX (10 haneli)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required className="mt-1" maxLength={10} />
-                <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
+                <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })} required className="mt-1" maxLength={11} />
+                <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
               </div>
               <div>
                 <Label>Araç Plakası</Label>

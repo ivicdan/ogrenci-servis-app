@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
 function validatePhone(phone: string) {
-  return /^\d{10}$/.test(phone.replace(/[\s\-]/g, ""));
+  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
 }
 
 const studyTimeLabel: Record<string, string> = {
@@ -52,8 +52,8 @@ export default function VeliProfil() {
     e.preventDefault();
     const phone = form.phone ?? "";
     const spousePhone = form.spousePhone ?? "";
-    if (phone && !validatePhone(phone)) return toast.error("Lütfen 10 haneli telefon numarasını giriniz.");
-    if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli için lütfen 10 haneli telefon numarasını giriniz.");
+    if (phone && !validatePhone(phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
+    if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli için lütfen 11 haneli telefon numarasını giriniz.");
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
       method: "PUT",
@@ -125,8 +125,8 @@ export default function VeliProfil() {
           <h2 className="font-semibold text-gray-900 text-sm">VELİ BİLGİLERİ</h2>
           <div>
             <Label>Telefon Numarası</Label>
-            <Input type="tel" placeholder="5XXXXXXXXX (10 haneli)" value={f("phone")} onChange={(e) => s("phone", e.target.value)} className="mt-1" maxLength={10} />
-            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
+            <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("phone")} onChange={(e) => s("phone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -162,8 +162,8 @@ export default function VeliProfil() {
           </div>
           <div>
             <Label>Telefon</Label>
-            <Input type="tel" placeholder="5XXXXXXXXX (10 haneli)" value={f("spousePhone")} onChange={(e) => s("spousePhone", e.target.value)} className="mt-1" maxLength={10} />
-            <p className="text-xs text-gray-400 mt-1">Lütfen 10 haneli telefon numarasını giriniz.</p>
+            <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("spousePhone")} onChange={(e) => s("spousePhone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
           </div>
           <div>
             <Label>Meslek</Label>

@@ -26,7 +26,14 @@ export default function SoforBildirimler() {
   async function markAllRead() {
     await apiFetch("/api/sofor/bildirimler", { method: "PUT" });
     toast.success("Tümü okundu olarak işaretlendi.");
-    loadNotifications();
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }
+
+  async function markRead(id: string) {
+    const notif = notifications.find((n) => n.id === id);
+    if (!notif || notif.read) return;
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    await apiFetch(`/api/sofor/bildirimler/${id}`, { method: "PATCH" });
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -36,9 +43,7 @@ export default function SoforBildirimler() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Bildirimler</h1>
-          {unreadCount > 0 && (
-            <p className="text-sm text-gray-500">{unreadCount} okunmamış</p>
-          )}
+          {unreadCount > 0 && <p className="text-sm text-gray-500">{unreadCount} okunmamış</p>}
         </div>
         {unreadCount > 0 && (
           <Button size="sm" variant="outline" onClick={markAllRead}>
@@ -57,8 +62,9 @@ export default function SoforBildirimler() {
         {notifications.map((n) => (
           <div
             key={n.id}
-            className={`bg-white rounded-2xl p-4 border transition-all ${
-              !n.read ? "border-green-200 bg-green-50" : "border-gray-100"
+            onClick={() => markRead(n.id)}
+            className={`bg-white rounded-2xl p-4 border transition-all cursor-pointer ${
+              !n.read ? "border-green-200 bg-green-50 hover:bg-green-100" : "border-gray-100 hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start gap-2">
