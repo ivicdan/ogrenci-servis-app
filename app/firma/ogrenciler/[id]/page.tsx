@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2 } from "lucide-react";
+import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,6 +51,7 @@ interface StudentDetail {
     spouseLastName: string | null;
     spousePhone: string | null;
     spouseProfession: string | null;
+    plainPassword: string | null;
   } | null;
   payments: {
     id: string;
@@ -70,6 +71,8 @@ export default function OgrenciDetay() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [resettingPass, setResettingPass] = useState(false);
+  const [newPass, setNewPass] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -89,6 +92,22 @@ export default function OgrenciDetay() {
     if (error) return toast.error(error);
     toast.success("Öğrenci pasife alındı.");
     router.push("/firma/ogrenciler");
+  }
+
+  async function handleResetPassword() {
+    setResettingPass(true);
+    const { data, error } = await apiFetch<{ plainPassword: string }>(
+      `/api/firma/ogrenciler/${params.id}/sifre-sifirla`,
+      { method: "POST" }
+    );
+    setResettingPass(false);
+    if (error) return toast.error(error);
+    if (data?.plainPassword) {
+      setNewPass(data.plainPassword);
+      if (student?.parent) {
+        setStudent({ ...student, parent: { ...student.parent, plainPassword: data.plainPassword } });
+      }
+    }
   }
 
   async function handleAssignDriver() {
@@ -215,6 +234,40 @@ export default function OgrenciDetay() {
                 )}
                 {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
               </div>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h3 className="font-semibold text-gray-900 text-xs mb-2 flex items-center gap-1.5">
+              <KeyRound className="w-3.5 h-3.5" /> Veli Giriş Şifresi
+            </h3>
+            {student.parent.plainPassword ? (
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg text-sm">
+                  {newPass ?? student.parent.plainPassword}
+                </span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(newPass ?? student.parent!.plainPassword!); toast.success("Kopyalandı!"); }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic mb-2">"Şifre Sıfırla" ile yeni şifre oluşturun.</p>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 text-purple-700 border-purple-200 hover:bg-purple-50"
+              onClick={handleResetPassword}
+              disabled={resettingPass}
+            >
+              <KeyRound className="w-3.5 h-3.5 mr-1" />
+              {resettingPass ? "Sıfırlanıyor..." : "Şifre Sıfırla"}
+            </Button>
+            {newPass && (
+              <p className="text-xs text-green-600 mt-1">Yeni şifre oluşturuldu. Veliye iletmeyi unutmayın.</p>
             )}
           </div>
         </div>
