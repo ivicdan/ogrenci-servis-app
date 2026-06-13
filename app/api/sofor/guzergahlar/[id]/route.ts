@@ -16,6 +16,7 @@ export async function GET(
     include: {
       students: {
         where: { status: "ACTIVE" },
+        orderBy: { routeOrder: "asc" },
         include: {
           parent: {
             select: {
@@ -57,7 +58,7 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
-  const { studentIds } = await req.json() as { studentIds: string[] };
+  const { students } = await req.json() as { students: { id: string; order: number }[] };
 
   const route = await prisma.route.findFirst({ where: { id, driverId: user.id } });
   if (!route) return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
@@ -65,14 +66,14 @@ export async function PUT(
   // Şu an bu güzergahta olan öğrencileri kaldır
   await prisma.student.updateMany({
     where: { routeId: id, driverId: user.id },
-    data: { routeId: null },
+    data: { routeId: null, routeOrder: 0 },
   });
 
-  // Seçilen öğrencileri güzergaha ekle
-  if (studentIds.length > 0) {
+  // Seçilen öğrencileri güzergaha sırasıyla ekle
+  for (const s of students) {
     await prisma.student.updateMany({
-      where: { id: { in: studentIds }, driverId: user.id, status: "ACTIVE" },
-      data: { routeId: id },
+      where: { id: s.id, driverId: user.id, status: "ACTIVE" },
+      data: { routeId: id, routeOrder: s.order },
     });
   }
 

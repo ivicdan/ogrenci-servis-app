@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -36,6 +36,12 @@ export default function SoforBildirimler() {
     await apiFetch(`/api/sofor/bildirimler/${id}`, { method: "PATCH" });
   }
 
+  async function deleteNotif(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await apiFetch(`/api/sofor/bildirimler/${id}`, { method: "DELETE" });
+    toast.success("Bildirim silindi.");
+  }
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -69,7 +75,7 @@ export default function SoforBildirimler() {
           >
             <div className="flex items-start gap-2">
               {!n.read && <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />}
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-gray-900 text-sm">{n.title}</p>
                 <p className="text-sm text-gray-600 mt-0.5">{n.body}</p>
                 <p className="text-xs text-gray-400 mt-1">
@@ -78,6 +84,12 @@ export default function SoforBildirimler() {
                   })}
                 </p>
               </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }}
+                className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-1"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

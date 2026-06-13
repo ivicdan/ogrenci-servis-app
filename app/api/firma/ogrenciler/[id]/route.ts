@@ -30,6 +30,7 @@ export async function GET(
           spousePhone: true,
           spouseProfession: true,
           plainPassword: true,
+          paymentDay: true,
         },
       },
       payments: {

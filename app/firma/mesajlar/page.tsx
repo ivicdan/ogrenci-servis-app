@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MessageSquare, Send, CheckCheck } from "lucide-react";
+import { MessageSquare, Send, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,6 @@ export default function FirmaMesajlar() {
 
   useEffect(() => {
     loadMessages();
-    // Mesajlar sayfası açıldığında bildirimleri okundu işaretle
     apiFetch("/api/firma/bildirimler", { method: "PUT" });
   }, []);
 
@@ -49,6 +48,17 @@ export default function FirmaMesajlar() {
     setOpen(false);
     setForm({ title: "", body: "", target: "all" });
     loadMessages();
+  }
+
+  async function deleteMessage(id: string) {
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+    const { error } = await apiFetch(`/api/firma/mesaj/${id}`, { method: "DELETE" });
+    if (error) {
+      toast.error(error);
+      loadMessages();
+    } else {
+      toast.success("Mesaj silindi.");
+    }
   }
 
   return (
@@ -113,16 +123,22 @@ export default function FirmaMesajlar() {
           const allRead = total > 0 && read === total;
           return (
             <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900">{m.title}</p>
                   <p className="text-sm text-gray-600 mt-1">{m.body}</p>
                 </div>
-                <div className="ml-3 text-right flex-shrink-0">
-                  <div className={`flex items-center gap-1 text-xs font-medium ${allRead ? "text-green-600" : "text-gray-400"}`}>
+                <div className="flex items-start gap-2 flex-shrink-0">
+                  <div className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${allRead ? "text-green-600" : "text-gray-400"}`}>
                     <CheckCheck className="w-3.5 h-3.5" />
-                    <span>{read}/{total} okundu</span>
+                    <span>{read}/{total}</span>
                   </div>
+                  <button
+                    onClick={() => deleteMessage(m.id)}
+                    className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-2">

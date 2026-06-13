@@ -52,6 +52,7 @@ interface StudentDetail {
     spousePhone: string | null;
     spouseProfession: string | null;
     plainPassword: string | null;
+    paymentDay: number | null;
   } | null;
   payments: {
     id: string;
@@ -222,6 +223,9 @@ export default function OgrenciDetay() {
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
             <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.phone}</p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
+            {student.parent.paymentDay != null && (
+              <p className="text-blue-700 font-medium">Ödeme Günü: Her ayın {student.parent.paymentDay}. günü</p>
+            )}
             {student.parent.address && (
               <p className="flex items-start gap-1.5 text-gray-600"><MapPin className="w-3.5 h-3.5 mt-0.5" /> {student.parent.address}</p>
             )}

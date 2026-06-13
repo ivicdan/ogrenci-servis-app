@@ -52,8 +52,10 @@ export default function VeliProfil() {
     e.preventDefault();
     const phone = form.phone ?? "";
     const spousePhone = form.spousePhone ?? "";
+    const studentPhone = form.studentPhone ?? "";
     if (phone && !validatePhone(phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
     if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli için lütfen 11 haneli telefon numarasını giriniz.");
+    if (studentPhone && !validatePhone(studentPhone)) return toast.error("Öğrenci telefonu 11 haneli olmalıdır.");
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
       method: "PUT",
@@ -117,7 +119,15 @@ export default function VeliProfil() {
           </div>
           <div>
             <Label>Öğrenci Cep Telefonu <span className="text-gray-400 text-xs">(Varsa)</span></Label>
-            <Input type="tel" placeholder="05XX XXX XX XX" value={f("studentPhone")} onChange={(e) => s("studentPhone", e.target.value)} className="mt-1" />
+            <Input
+              type="tel"
+              placeholder="Lütfen başında 0 olacak şekilde yazınız"
+              value={f("studentPhone")}
+              onChange={(e) => s("studentPhone", e.target.value.replace(/\D/g, ""))}
+              className="mt-1"
+              maxLength={11}
+            />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
           </div>
         </div>
 

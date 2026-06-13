@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, Bus, Phone } from "lucide-react";
+import { GraduationCap, Phone, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/api-client";
 
 interface ParentData {
@@ -30,10 +32,22 @@ interface ParentData {
 
 export default function VeliDashboard() {
   const [data, setData] = useState<ParentData | null>(null);
+  const [overdueModal, setOverdueModal] = useState(false);
+  const [daysLate, setDaysLate] = useState(0);
 
   useEffect(() => {
     apiFetch<ParentData>("/api/veli/ogrenci").then(({ data }) => {
       if (data) setData(data);
+    });
+
+    apiFetch<{ overdue: boolean; daysLate: number }>("/api/veli/gecikme-kontrol").then(({ data }) => {
+      if (!data?.overdue) return;
+      const key = `odeme-uyari-${new Date().toDateString()}`;
+      if (!sessionStorage.getItem(key)) {
+        setDaysLate(data.daysLate);
+        setOverdueModal(true);
+        sessionStorage.setItem(key, "1");
+      }
     });
   }, []);
 
@@ -43,6 +57,32 @@ export default function VeliDashboard() {
 
   return (
     <div className="max-w-md mx-auto space-y-4">
+      {/* Gecikmiş ödeme uyarısı */}
+      <Dialog open={overdueModal} onOpenChange={setOverdueModal}>
+        <DialogContent className="max-w-sm mx-auto">
+          <div className="text-center py-2">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Ödeme Gecikti</h2>
+            <p className="text-gray-600 text-sm mb-1">
+              Ödemeniz <strong>{daysLate} gün</strong> gecikmiştir.
+            </p>
+            <p className="text-gray-600 text-sm mb-5">
+              Lütfen en kısa sürede ödemenizi yapınız.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setOverdueModal(false)}>
+                Tamam
+              </Button>
+              <Link href="/veli/odeme" className="flex-1">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">Öde</Button>
+              </Link>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Öğrenci Kartı */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-4 mb-4">
@@ -60,7 +100,6 @@ export default function VeliDashboard() {
           </div>
         </div>
 
-        {/* Şoför Bilgisi */}
         {student.driver ? (
           <div className="bg-green-50 rounded-xl p-3 border border-green-100">
             <p className="text-xs font-semibold text-green-700 mb-1.5">SERVİS BİLGİLERİ</p>

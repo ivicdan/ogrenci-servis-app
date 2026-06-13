@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "30d";
 
 export type UserType = "FIRM" | "DRIVER" | "PARENT";
 
