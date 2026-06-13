@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { KvkkDialog } from "@/components/kvkk-dialog";
 
 function validatePhone(phone: string) {
   return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
@@ -21,12 +22,15 @@ export default function VeliKayit() {
   const [form, setForm] = useState({ firmCode: "", studentTcId: "", phone: "", password: "", passwordConfirm: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [kvkkChecked, setKvkkChecked] = useState(false);
+  const [kvkkOpen, setKvkkOpen] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (!validateTcId(form.studentTcId)) return toast.error("Öğrenci TC kimlik numarası 11 haneli olmalıdır.");
     if (!validatePhone(form.phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
+    if (!kvkkChecked) return toast.error("Devam etmek için KVKK metnini onaylamanız gerekmektedir.");
     setLoading(true);
     const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/kayit", {
       method: "POST",
@@ -98,7 +102,28 @@ export default function VeliKayit() {
               value={form.passwordConfirm} onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
               required className="mt-1" />
           </div>
-          <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 mt-1" disabled={loading}>
+
+          <div className="flex items-start gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="kvkk"
+              checked={kvkkChecked}
+              onChange={(e) => setKvkkChecked(e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded border-gray-300 text-purple-600 flex-shrink-0 cursor-pointer"
+            />
+            <label htmlFor="kvkk" className="text-sm text-gray-600 leading-snug cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setKvkkOpen(true)}
+                className="text-purple-600 font-medium hover:underline"
+              >
+                Kişisel Verilerin Korunması (KVKK) Aydınlatma Metni
+              </button>
+              {"'ni okudum ve kişisel verilerimin işlenmesine onay veriyorum."}
+            </label>
+          </div>
+
+          <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 mt-1" disabled={loading || !kvkkChecked}>
             {loading ? "Kaydediliyor..." : "Kayıt Ol"}
           </Button>
         </form>
@@ -111,6 +136,8 @@ export default function VeliKayit() {
           <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← Ana sayfaya dön</Link>
         </div>
       </div>
+
+      <KvkkDialog open={kvkkOpen} onClose={() => setKvkkOpen(false)} />
     </div>
   );
 }

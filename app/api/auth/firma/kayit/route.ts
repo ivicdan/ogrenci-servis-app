@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
         phone,
         password: hashed,
         status: "PRE_REGISTERED",
+        kvkkAccepted: true,
+        kvkkAcceptedAt: new Date(),
       },
     });
 

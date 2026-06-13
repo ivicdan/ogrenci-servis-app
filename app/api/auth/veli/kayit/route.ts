@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
         phone,
         password: hashed,
         address: "",
-        phoneVerified: true, // SMS doğrulama geçici olarak devre dışı
+        phoneVerified: true,
+        kvkkAccepted: true,
+        kvkkAcceptedAt: new Date(),
       },
     });
 

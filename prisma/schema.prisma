@@ -68,6 +68,8 @@ model Firm {
   taxOrTcId     String         @unique
   phone         String         @unique
   password      String
+  kvkkAccepted  Boolean        @default(false)
+  kvkkAcceptedAt DateTime?
   status        FirmStatus     @default(PRE_REGISTERED)
   name          String?
   address       String?
@@ -139,6 +141,8 @@ model Parent {
   lastName         String
   phone            String         @unique
   password         String
+  kvkkAccepted     Boolean        @default(false)
+  kvkkAcceptedAt   DateTime?
   phoneVerified    Boolean        @default(false)
   otpCode          String?
   otpExpiry        DateTime?
