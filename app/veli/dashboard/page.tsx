@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, Phone, AlertCircle } from "lucide-react";
+import { GraduationCap, AlertCircle } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/api-client";
@@ -106,10 +107,7 @@ export default function VeliDashboard() {
             <div className="space-y-1 text-sm text-gray-700">
               <div className="flex items-center justify-between">
                 <span>🚌 {student.driver.plateNumber ?? "Plaka yok"}</span>
-                <a href={`tel:${student.driver.phone}`} className="flex items-center gap-1 text-green-600">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-xs">{student.driver.phone}</span>
-                </a>
+                <CopyPhone phone={student.driver.phone} className="text-xs text-green-700" />
               </div>
               <p>👨‍✈️ {student.driver.firstName} {student.driver.lastName}</p>
               {student.driver.assistantName && (

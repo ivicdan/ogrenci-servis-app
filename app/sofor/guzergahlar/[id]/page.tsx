@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, CheckCircle, XCircle, Phone, UserPlus, ChevronUp, ChevronDown, CheckCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, School } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { CopyPhone } from "@/components/copy-phone";
 
 interface Attendance {
   status: string;
@@ -64,7 +65,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
   function openEdit() {
     if (!route) return;
-    // Güzergahtaki öğrencileri mevcut sıraya göre başlat
     setOrderedStudents(route.students.map((s) => s.id));
     setEditOpen(true);
   }
@@ -110,22 +110,30 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
   async function completeTrip() {
     setCompleting(true);
-    const { error } = await apiFetch(`/api/sofor/guzergahlar/${id}/tamamla`, { method: "POST" });
+    const { data, error } = await apiFetch<{ notified: number }>(`/api/sofor/guzergahlar/${id}/tamamla`, { method: "POST" });
     setCompleting(false);
     if (error) return toast.error(error);
-    toast.success("Sefer tamamlandı! Velilere bildirim gönderildi.");
+    toast.success(`Sefer tamamlandı! ${data?.notified ?? 0} veliye bildirim gönderildi.`);
   }
 
-  async function markAttendance(studentId: string, status: "PICKED_UP" | "ABSENT") {
-    setProcessing(studentId);
-    const type = route?.type?.includes("PICKUP") ? "PICKUP" : "DROPOFF";
+  async function markAttendance(
+    studentId: string,
+    status: "PICKED_UP" | "ABSENT",
+    type?: "PICKUP" | "DROPOFF"
+  ) {
+    setProcessing(studentId + (type ?? ""));
+    const attendType = type ?? (route?.type?.includes("PICKUP") ? "PICKUP" : "DROPOFF");
     const { error } = await apiFetch("/api/sofor/yoklama", {
       method: "POST",
-      body: JSON.stringify({ studentId, type, status }),
+      body: JSON.stringify({ studentId, type: attendType, status }),
     });
     setProcessing(null);
     if (error) return toast.error(error);
-    toast.success(status === "PICKED_UP" ? "✓ Alındı işaretlendi" : "Devamsız işaretlendi");
+    if (type === "DROPOFF" && status === "PICKED_UP") {
+      toast.success("Okula bırakıldı! Veliye bildirim gönderildi.");
+    } else {
+      toast.success(status === "PICKED_UP" ? "✓ Alındı işaretlendi" : "Devamsız işaretlendi");
+    }
     loadRoute();
   }
 
@@ -157,11 +165,12 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
             {completing ? "..." : "Sefer Tamamlandı"}
           </Button>
           <Button size="sm" variant="outline" onClick={openEdit} className="border-green-200 text-green-700 hover:bg-green-50">
-            <UserPlus className="w-4 h-4 mr-1" /> Öğrenci Düzenle
+            <UserPlus className="w-4 h-4 mr-1" /> Düzenle
           </Button>
         </div>
       </div>
 
+      {/* Öğrenci Düzenleme Dialogu */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-sm mx-auto max-h-[85vh] flex flex-col">
           <DialogHeader>
@@ -169,7 +178,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
           </DialogHeader>
           <p className="text-xs text-gray-500 -mt-2">Öğrenci ekleyin, çıkarın ve sıralarını düzenleyin.</p>
 
-          {/* Seçilmiş öğrenciler — sıralı */}
           {orderedStudents.length > 0 && (
             <div className="space-y-1 mt-2">
               <p className="text-xs font-semibold text-gray-600 mb-1">Sıralama</p>
@@ -184,34 +192,20 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                       <p className="text-xs text-gray-500">{s.class}</p>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <button
-                        onClick={() => moveUp(idx)}
-                        disabled={idx === 0}
-                        className="disabled:opacity-30 text-gray-500 hover:text-green-600"
-                      >
+                      <button onClick={() => moveUp(idx)} disabled={idx === 0} className="disabled:opacity-30 text-gray-500 hover:text-green-600">
                         <ChevronUp className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => moveDown(idx)}
-                        disabled={idx === orderedStudents.length - 1}
-                        className="disabled:opacity-30 text-gray-500 hover:text-green-600"
-                      >
+                      <button onClick={() => moveDown(idx)} disabled={idx === orderedStudents.length - 1} className="disabled:opacity-30 text-gray-500 hover:text-green-600">
                         <ChevronDown className="w-4 h-4" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => toggleStudent(sid)}
-                      className="text-xs text-red-400 hover:text-red-600 px-1"
-                    >
-                      ✕
-                    </button>
+                    <button onClick={() => toggleStudent(sid)} className="text-xs text-red-400 hover:text-red-600 px-1">✕</button>
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* Tüm öğrenciler — checkbox seçim */}
           <div className="flex-1 overflow-y-auto space-y-1 mt-3">
             <p className="text-xs font-semibold text-gray-600 mb-1">Tüm Öğrenciler</p>
             {allStudents.length === 0 && (
@@ -220,15 +214,8 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
             {allStudents.map((s) => {
               const selected = orderedStudents.includes(s.id);
               return (
-                <label key={s.id} className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                  selected ? "border-green-200 bg-green-50 opacity-50" : "border-gray-100 hover:bg-gray-50"
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => toggleStudent(s.id)}
-                    className="w-4 h-4 rounded text-green-600"
-                  />
+                <label key={s.id} className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${selected ? "border-green-200 bg-green-50 opacity-50" : "border-gray-100 hover:bg-gray-50"}`}>
+                  <input type="checkbox" checked={selected} onChange={() => toggleStudent(s.id)} className="w-4 h-4 rounded text-green-600" />
                   <div>
                     <p className="font-medium text-sm text-gray-900">{s.firstName} {s.lastName}</p>
                     <p className="text-xs text-gray-500">{s.class} · {s.studyTime === "MORNING" ? "Sabah" : "Öğlen"}</p>
@@ -247,90 +234,100 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
         </DialogContent>
       </Dialog>
 
+      {/* Öğrenci Kartları */}
       <div className="space-y-3">
         {route.students.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <p className="text-sm">Bu güzergahta öğrenci yok.</p>
-            <p className="text-xs mt-1">"Öğrenci Düzenle" ile öğrenci ekleyin.</p>
+            <p className="text-xs mt-1">"Düzenle" ile öğrenci ekleyin.</p>
           </div>
         )}
         {route.students.map((student, idx) => {
-          const todayAttendance = student.attendances[0];
-          const isAbsent = todayAttendance?.status === "NOTIFIED_ABSENT";
-          const isPickedUp = todayAttendance?.status === "PICKED_UP";
+          const pickupAtt = student.attendances.find((a) => a.type === "PICKUP");
+          const dropoffAtt = student.attendances.find((a) => a.type === "DROPOFF");
+          const isAbsent = pickupAtt?.status === "NOTIFIED_ABSENT";
+          const isPickedUp = pickupAtt?.status === "PICKED_UP";
+          const isDroppedOff = dropoffAtt?.status === "PICKED_UP";
+          const processingKey = processing?.startsWith(student.id);
 
           return (
             <div
               key={student.id}
               className={`bg-white rounded-2xl p-4 shadow-sm border transition-all ${
-                isAbsent ? "border-orange-300 bg-orange-50" : isPickedUp ? "border-green-300 bg-green-50" : "border-gray-100"
+                isAbsent ? "border-orange-300 bg-orange-50" : isPickedUp ? "border-green-200 bg-green-50" : "border-gray-100"
               }`}
             >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-xs font-bold text-gray-400 mt-0.5 w-5 text-right">{idx + 1}.</span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-gray-900">{student.firstName} {student.lastName}</p>
-                      {isAbsent && (
-                        <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>
-                      )}
-                      {isPickedUp && (
-                        <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      {student.class}{student.teacher && ` · ${student.teacher}`}{" · "}{student.studyTime === "MORNING" ? "Sabah" : "Öğlen"}
-                    </p>
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-xs font-bold text-gray-400 mt-0.5 w-5 text-right flex-shrink-0">{idx + 1}.</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900">{student.firstName} {student.lastName}</p>
+                    {isAbsent && <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>}
+                    {isPickedUp && !isDroppedOff && <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>}
+                    {isDroppedOff && <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-medium">Okula İndirildi</span>}
                   </div>
+                  <p className="text-xs text-gray-500">
+                    {student.class}{student.teacher && ` · ${student.teacher}`}{" · "}{student.studyTime === "MORNING" ? "Sabah" : "Öğlen"}
+                  </p>
                 </div>
               </div>
 
               {student.parent && (
                 <div className="text-xs text-gray-500 space-y-0.5 mb-3 ml-7">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span>👤 {student.parent.firstName} {student.parent.lastName}</span>
-                    <a href={`tel:${student.parent.phone}`} className="text-blue-500 hover:text-blue-700">
-                      <Phone className="w-3 h-3" />
-                    </a>
-                    <span>{student.parent.phone}</span>
+                    <CopyPhone phone={student.parent.phone} className="text-blue-500" />
                   </div>
                   {student.parent.spouseFirstName && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span>👤 {student.parent.spouseFirstName} {student.parent.spouseLastName}</span>
                       {student.parent.spousePhone && (
-                        <a href={`tel:${student.parent.spousePhone}`} className="text-blue-500">
-                          <Phone className="w-3 h-3" />
-                        </a>
+                        <CopyPhone phone={student.parent.spousePhone} className="text-blue-500" />
                       )}
-                      {student.parent.spousePhone && <span>{student.parent.spousePhone}</span>}
                     </div>
                   )}
                 </div>
               )}
 
-              {!isPickedUp && !isAbsent && (
-                <div className="flex gap-2 ml-7">
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => markAttendance(student.id, "PICKED_UP")}
-                    disabled={processing === student.id}
-                  >
-                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                    {processing === student.id ? "..." : "Alındı"}
-                  </Button>
+              <div className="flex gap-2 ml-7 flex-wrap">
+                {/* Alındı / Yok butonları */}
+                {!isPickedUp && !isAbsent && (
+                  <>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-green-600 hover:bg-green-700 min-w-[80px]"
+                      onClick={() => markAttendance(student.id, "PICKED_UP")}
+                      disabled={!!processingKey}
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                      {processing === student.id + "" ? "..." : "Alındı"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 min-w-[80px]"
+                      onClick={() => markAttendance(student.id, "ABSENT")}
+                      disabled={!!processingKey}
+                    >
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> Yok
+                    </Button>
+                  </>
+                )}
+
+                {/* Okula İndirildi butonu */}
+                {!isAbsent && !isDroppedOff && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-                    onClick={() => markAttendance(student.id, "ABSENT")}
-                    disabled={processing === student.id}
+                    className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 min-w-[120px]"
+                    onClick={() => markAttendance(student.id, "PICKED_UP", "DROPOFF")}
+                    disabled={!!processingKey}
                   >
-                    <XCircle className="w-3.5 h-3.5 mr-1" /> Yok
+                    <School className="w-3.5 h-3.5 mr-1" />
+                    {processing === student.id + "DROPOFF" ? "..." : "Okula İndirildi"}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}

@@ -11,19 +11,36 @@ export async function POST(
 
   const { id } = await params;
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
   const route = await prisma.route.findFirst({
     where: { id, driverId: user.id },
     include: {
       students: {
         where: { status: "ACTIVE" },
-        include: { parent: { select: { id: true } } },
+        include: {
+          parent: { select: { id: true } },
+          attendances: {
+            where: {
+              type: "PICKUP",
+              status: "NOTIFIED_ABSENT",
+              date: { gte: todayStart, lt: todayEnd },
+            },
+          },
+        },
       },
     },
   });
 
   if (!route) return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
 
-  const parentIds = route.students
+  // Bugün "okula gitmeyecek" veya "servisle gitmeyecek" bildirimi yapan velileri çıkar
+  const eligibleStudents = route.students.filter((s) => s.attendances.length === 0);
+
+  const parentIds = eligibleStudents
     .map((s) => s.parent?.id)
     .filter(Boolean) as string[];
 

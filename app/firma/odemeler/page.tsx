@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { CopyPhone } from "@/components/copy-phone";
+import Link from "next/link";
 
 interface Payment {
   id: string;
@@ -20,6 +22,15 @@ interface Payment {
   };
 }
 
+interface OverdueParent {
+  parentId: string;
+  parentName: string;
+  studentId: string;
+  studentName: string;
+  paymentDay: number;
+  daysLate: number;
+}
+
 const methodMap: Record<string, string> = {
   CASH: "Nakit", BANK_TRANSFER: "Havale/EFT",
 };
@@ -32,9 +43,18 @@ const tabs = [
 
 export default function FirmaOdemeler() {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [overdueParents, setOverdueParents] = useState<OverdueParent[]>([]);
   const [filter, setFilter] = useState("SUBMITTED");
 
   useEffect(() => { loadPayments(); }, [filter]);
+
+  useEffect(() => {
+    if (filter === "OVERDUE") {
+      apiFetch<OverdueParent[]>("/api/firma/odemesi-gecikenler").then(({ data }) => {
+        if (data) setOverdueParents(data);
+      });
+    }
+  }, [filter]);
 
   async function loadPayments() {
     const { data } = await apiFetch<Payment[]>(`/api/firma/odeme?status=${filter}`);
@@ -70,7 +90,7 @@ export default function FirmaOdemeler() {
       </div>
 
       <div className="space-y-3">
-        {payments.length === 0 && (
+        {payments.length === 0 && filter !== "OVERDUE" && (
           <div className="text-center py-12 text-gray-400">
             <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p>Bu kategoride ödeme yok</p>
@@ -84,10 +104,12 @@ export default function FirmaOdemeler() {
                   {p.student.firstName} {p.student.lastName}
                 </p>
                 {p.student.parent && (
-                  <p className="text-xs text-gray-500">
-                    Veli: {p.student.parent.firstName} {p.student.parent.lastName}
-                    {p.student.parent.phone && ` · ${p.student.parent.phone}`}
-                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap">
+                    <span>Veli: {p.student.parent.firstName} {p.student.parent.lastName}</span>
+                    {p.student.parent.phone && (
+                      <CopyPhone phone={p.student.parent.phone} className="text-blue-500" />
+                    )}
+                  </div>
                 )}
               </div>
               {filter === "OVERDUE" ? (
@@ -125,6 +147,37 @@ export default function FirmaOdemeler() {
             </div>
           </div>
         ))}
+
+        {/* Ödeme günü geciken veliler (paymentDay tabanlı) */}
+        {filter === "OVERDUE" && overdueParents.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Ödeme Günü Geçenler</p>
+            <div className="space-y-2">
+              {overdueParents.map((o) => (
+                <Link
+                  key={o.studentId}
+                  href={`/firma/ogrenciler/${o.studentId}`}
+                  className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-red-100 hover:bg-red-50 transition-all"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{o.studentName}</p>
+                    <p className="text-xs text-gray-500">{o.parentName} · Her ayın {o.paymentDay}. günü</p>
+                  </div>
+                  <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-lg flex-shrink-0">
+                    {o.daysLate} gün geç
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {filter === "OVERDUE" && payments.length === 0 && overdueParents.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <p>Gecikmiş ödeme yok</p>
+          </div>
+        )}
       </div>
     </div>
   );

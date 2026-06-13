@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, Search } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api-client";
@@ -102,9 +103,15 @@ export default function FirmaOgrenciler() {
 
             {s.parent && (
               <div className="border-t border-gray-100 pt-2 mt-2 text-xs text-gray-600 space-y-0.5">
-                <p>👤 {s.parent.firstName} {s.parent.lastName} · {s.parent.phone}</p>
-                {s.parent.spouseName && (
-                  <p>👤 {s.parent.spouseName} · {s.parent.spousePhone}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>👤 {s.parent.firstName} {s.parent.lastName} ·</span>
+                  <CopyPhone phone={s.parent.phone} />
+                </div>
+                {s.parent.spousePhone && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span>👤</span>
+                    <CopyPhone phone={s.parent.spousePhone} />
+                  </div>
                 )}
               </div>
             )}

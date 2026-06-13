@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
           ? `${student.firstName} servise alındı.`
           : `${student.firstName} servise binemedi (devamsız).`
         : status === "PICKED_UP"
-        ? `${student.firstName} okula bırakıldı.`
+        ? `Çocuğunuz güvenli bir şekilde okula bırakılmıştır.`
         : `${student.firstName} okula bırakılamadı.`;
 
     await createNotification({

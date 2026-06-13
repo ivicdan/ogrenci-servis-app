@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -221,7 +222,7 @@ export default function OgrenciDetay() {
           <h2 className="font-semibold text-gray-900 text-sm mb-3">Veli Bilgileri</h2>
           <div className="space-y-1.5 text-sm text-gray-700">
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
-            <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.phone}</p>
+            <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.phone} /></p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
             {student.parent.paymentDay != null && (
               <p className="text-blue-700 font-medium">Ödeme Günü: Her ayın {student.parent.paymentDay}. günü</p>
@@ -234,7 +235,7 @@ export default function OgrenciDetay() {
                 <p className="font-medium text-xs text-gray-500 mb-1">Eş / Diğer Veli</p>
                 <p>{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
                 {student.parent.spousePhone && (
-                  <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.spousePhone}</p>
+                  <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.spousePhone!} /></p>
                 )}
                 {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
               </div>

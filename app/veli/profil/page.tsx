@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
 function validatePhone(phone: string) {
-  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
+  const digits = phone.replace(/[\s\-]/g, "");
+  return /^\d{11}$/.test(digits) && digits[0] === "0";
 }
 
 const studyTimeLabel: Record<string, string> = {
@@ -53,8 +54,8 @@ export default function VeliProfil() {
     const phone = form.phone ?? "";
     const spousePhone = form.spousePhone ?? "";
     const studentPhone = form.studentPhone ?? "";
-    if (phone && !validatePhone(phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
-    if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli için lütfen 11 haneli telefon numarasını giriniz.");
+    if (phone && !validatePhone(phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
+    if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli telefonu 11 haneli ve 0 ile başlamalıdır.");
     if (studentPhone && !validatePhone(studentPhone)) return toast.error("Öğrenci telefonu 11 haneli olmalıdır.");
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
@@ -136,7 +137,11 @@ export default function VeliProfil() {
           <div>
             <Label>Telefon Numarası</Label>
             <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("phone")} onChange={(e) => s("phone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
-            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            {f("phone").length > 0 && f("phone")[0] !== "0" ? (
+              <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -173,7 +178,11 @@ export default function VeliProfil() {
           <div>
             <Label>Telefon</Label>
             <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("spousePhone")} onChange={(e) => s("spousePhone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
-            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            {f("spousePhone").length > 0 && f("spousePhone")[0] !== "0" ? (
+              <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            )}
           </div>
           <div>
             <Label>Meslek</Label>

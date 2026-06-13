@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Bus, Copy } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +28,8 @@ interface NewDriverResult extends Driver {
 }
 
 function validatePhone(phone: string) {
-  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
+  const digits = phone.replace(/[\s\-]/g, "");
+  return /^\d{11}$/.test(digits) && digits[0] === "0";
 }
 function validateTcId(tc: string) {
   return /^\d{11}$/.test(tc.replace(/\s/g, ""));
@@ -56,7 +58,7 @@ export default function FirmaSoforler() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!validateTcId(form.tcId)) return toast.error("TC kimlik numarası tam olarak 11 haneli olmalıdır.");
-    if (!validatePhone(form.phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
+    if (!validatePhone(form.phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
     setLoading(true);
     const { data, error } = await apiFetch<NewDriverResult>("/api/firma/soforler", {
       method: "POST",
@@ -155,7 +157,11 @@ export default function FirmaSoforler() {
               <div>
                 <Label>Telefon</Label>
                 <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })} required className="mt-1" maxLength={11} />
-                <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+                {form.phone.length > 0 && form.phone[0] !== "0" ? (
+                  <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+                )}
               </div>
               <div>
                 <Label>Araç Plakası</Label>
@@ -199,7 +205,7 @@ export default function FirmaSoforler() {
                     <span className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
                       {driver.driverCode}
                     </span>
-                    <span className="text-xs text-gray-500">{driver.phone}</span>
+                    <CopyPhone phone={driver.phone} className="text-xs text-gray-500" />
                   </div>
                   {driver.plateNumber && (
                     <p className="text-xs text-gray-500 mt-0.5">🚌 {driver.plateNumber}</p>

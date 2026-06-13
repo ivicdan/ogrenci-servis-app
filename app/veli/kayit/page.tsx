@@ -11,7 +11,8 @@ import { apiFetch } from "@/lib/api-client";
 import { KvkkDialog } from "@/components/kvkk-dialog";
 
 function validatePhone(phone: string) {
-  return /^\d{11}$/.test(phone.replace(/[\s\-]/g, ""));
+  const digits = phone.replace(/[\s\-]/g, "");
+  return /^\d{11}$/.test(digits) && digits[0] === "0";
 }
 function validateTcId(tc: string) {
   return /^\d{11}$/.test(tc.replace(/\s/g, ""));
@@ -28,7 +29,7 @@ export default function VeliKayit() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (!validateTcId(form.studentTcId)) return toast.error("Öğrenci TC kimlik numarası 11 haneli olmalıdır.");
-    if (!validatePhone(form.phone)) return toast.error("Lütfen 11 haneli telefon numarasını giriniz.");
+    if (!validatePhone(form.phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
     if (!kvkkChecked) return toast.error("Devam etmek için KVKK metnini onaylamanız gerekmektedir.");
     setLoading(true);
@@ -82,7 +83,11 @@ export default function VeliKayit() {
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
               required className="mt-1" maxLength={11} />
-            <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            {form.phone.length > 0 && form.phone[0] !== "0" ? (
+              <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            )}
           </div>
           <div>
             <Label>Şifre</Label>

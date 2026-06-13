@@ -9,7 +9,7 @@ const options = [
   {
     type: "PICKUP",
     label: "Okula servisle gitmeyecek",
-    desc: "Sabah servisi kullanmayacak",
+    desc: "Sabah/öğlen servisi kullanmayacak",
     color: "bg-orange-50 border-orange-200 text-orange-700",
     icon: <ArrowRight className="w-5 h-5" />,
   },
