@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Bus, ArrowLeft, GraduationCap, Phone, Route, Pencil, Trash2, Copy, KeyRound } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,7 +210,7 @@ export default function SoforDetay() {
               </Badge>
             </div>
             <div className="mt-3 space-y-1 text-sm text-gray-600">
-              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> {driver.phone}</p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={driver.phone} /></p>
               {driver.plateNumber && <p>🚌 Plaka: {driver.plateNumber}</p>}
               {driver.assistantName && <p>👤 Hostes: {driver.assistantName}</p>}
               <p className="text-xs text-gray-400">Kayıt: {new Date(driver.createdAt).toLocaleDateString("tr-TR")}</p>
@@ -276,7 +277,7 @@ export default function SoforDetay() {
               <div key={s.id} className="border border-gray-100 rounded-xl p-3">
                 <p className="font-medium text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
                 <p className="text-xs text-gray-500">{s.school} · {s.class} · {studyTimeLabel[s.studyTime]}</p>
-                {s.parent && <p className="text-xs text-gray-500 mt-1">👤 {s.parent.firstName} {s.parent.lastName} · {s.parent.phone}</p>}
+                {s.parent && <p className="text-xs text-gray-500 mt-1">👤 {s.parent.firstName} {s.parent.lastName} · <CopyPhone phone={s.parent.phone} /></p>}
               </div>
             ))}
           </div>

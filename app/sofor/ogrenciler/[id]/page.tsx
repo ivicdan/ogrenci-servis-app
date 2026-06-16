@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { GraduationCap, ArrowLeft, Phone, MapPin } from "lucide-react";
+import { CopyPhone } from "@/components/copy-phone";
 import { apiFetch } from "@/lib/api-client";
 
 const studyTimeLabel: Record<string, string> = {
@@ -59,7 +60,7 @@ export default function SoforOgrenciDetay() {
             <p>Doğum: {new Date(student.birthDate).toLocaleDateString("tr-TR")}</p>
           )}
           {student.phone && (
-            <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {student.phone}</p>
+            <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.phone} /></p>
           )}
         </div>
       </div>
@@ -69,7 +70,7 @@ export default function SoforOgrenciDetay() {
           <h2 className="font-semibold text-gray-900 text-sm mb-3">Veli Bilgileri</h2>
           <div className="space-y-2 text-sm text-gray-700">
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
-            <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.phone}</p>
+            <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.phone} /></p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
             {student.parent.address && (
               <p className="flex items-start gap-1.5 text-gray-600"><MapPin className="w-3.5 h-3.5 mt-0.5" /> {student.parent.address}</p>
@@ -84,7 +85,7 @@ export default function SoforOgrenciDetay() {
           <div className="space-y-2 text-sm text-gray-700">
             <p className="font-medium">{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
             {student.parent.spousePhone && (
-              <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> {student.parent.spousePhone}</p>
+              <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.spousePhone} /></p>
             )}
             {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
           </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GraduationCap, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CopyPhone } from "@/components/copy-phone";
 import { apiFetch } from "@/lib/api-client";
 
 const studyTimeLabel: Record<string, string> = {
@@ -81,7 +82,7 @@ export default function SoforOgrenciler() {
             </div>
             {s.parent && (
               <p className="text-xs text-gray-500 mt-2">
-                👤 {s.parent.firstName} {s.parent.lastName} · {s.parent.phone}
+                👤 {s.parent.firstName} {s.parent.lastName} · <CopyPhone phone={s.parent.phone} />
               </p>
             )}
           </div>

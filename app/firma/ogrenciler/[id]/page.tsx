@@ -175,7 +175,7 @@ export default function OgrenciDetay() {
               <p>Öğrenim: {studyTimeLabel[student.studyTime]}</p>
               <p className="text-xs text-gray-400">TC: {student.tcId}</p>
               {student.phone && (
-                <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {student.phone}</p>
+                <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.phone} /></p>
               )}
             </div>
           </div>
