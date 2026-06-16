@@ -246,6 +246,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
           const pickupAtt = student.attendances.find((a) => a.type === "PICKUP");
           const dropoffAtt = student.attendances.find((a) => a.type === "DROPOFF");
           const isAbsent = pickupAtt?.status === "NOTIFIED_ABSENT";
+          const isMarkedAbsent = pickupAtt?.status === "ABSENT";
           const isPickedUp = pickupAtt?.status === "PICKED_UP";
           const isDroppedOff = dropoffAtt?.status === "PICKED_UP";
           const processingKey = processing?.startsWith(student.id);
@@ -254,7 +255,10 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
             <div
               key={student.id}
               className={`bg-white rounded-2xl p-4 shadow-sm border transition-all ${
-                isAbsent ? "border-orange-300 bg-orange-50" : isPickedUp ? "border-green-200 bg-green-50" : "border-gray-100"
+                isAbsent ? "border-orange-300 bg-orange-50"
+                : isMarkedAbsent ? "border-red-200 bg-red-50"
+                : isPickedUp ? "border-green-200 bg-green-50"
+                : "border-gray-100"
               }`}
             >
               <div className="flex items-start gap-2 mb-2">
@@ -263,6 +267,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-gray-900">{student.firstName} {student.lastName}</p>
                     {isAbsent && <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>}
+                    {isMarkedAbsent && <span className="text-xs bg-red-200 text-red-700 px-2 py-0.5 rounded-full font-medium">Servise Binmedi</span>}
                     {isPickedUp && !isDroppedOff && <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>}
                     {isDroppedOff && <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-medium">Okula İndirildi</span>}
                   </div>
@@ -291,7 +296,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
               <div className="flex gap-2 ml-7 flex-wrap">
                 {/* Alındı / Yok butonları */}
-                {!isPickedUp && !isAbsent && (
+                {!isPickedUp && !isAbsent && !isMarkedAbsent && (
                   <>
                     <Button
                       size="sm"
@@ -315,7 +320,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                 )}
 
                 {/* Okula İndirildi butonu */}
-                {!isAbsent && !isDroppedOff && (
+                {!isAbsent && !isMarkedAbsent && !isDroppedOff && (
                   <Button
                     size="sm"
                     variant="outline"
