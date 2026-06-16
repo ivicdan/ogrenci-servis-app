@@ -107,25 +107,25 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
         </header>
         <main className="flex-1 p-4 md:p-6">{children}</main>
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex">
-          {navItems.slice(0, 4).map((item) => {
+          {navItems.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex-1 flex flex-col items-center py-2 text-xs font-medium transition-colors ${
-                  active ? "text-blue-600" : "text-gray-500"
+                className={`flex-1 flex flex-col items-center py-1.5 transition-colors ${
+                  active ? "text-blue-600" : "text-gray-400"
                 }`}
               >
                 <div className="relative">
-                  <item.icon className="w-5 h-5 mb-0.5" />
+                  <item.icon className="w-4 h-4 mb-0.5" />
                   {item.showBadge && unread > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
                       {unread > 9 ? "9+" : unread}
                     </span>
                   )}
                 </div>
-                {item.label}
+                <span className="text-[9px] font-medium leading-none">{item.label}</span>
               </Link>
             );
           })}
