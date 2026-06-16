@@ -83,9 +83,9 @@ export default function VeliOdeme() {
     <div className="max-w-md mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Ödemelerim</h1>
 
-      {iban && (
-        <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-          <p className="text-xs font-semibold text-blue-700 mb-1">ÖDEME YAPILACAK IBAN</p>
+      <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+        <p className="text-xs font-semibold text-blue-700 mb-1">ÖDEME YAPILACAK IBAN</p>
+        {iban ? (
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm text-blue-900 font-bold">{iban}</span>
             <button
@@ -95,8 +95,10 @@ export default function VeliOdeme() {
               <Copy className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-gray-400">Firma tarafından henüz girilmedi.</p>
+        )}
+      </div>
 
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 mb-3">

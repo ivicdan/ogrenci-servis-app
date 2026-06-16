@@ -15,14 +15,14 @@ export default function FirmaEvrak() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (form.iban) {
-      const ibanDigits = form.iban.replace(/\D/g, "");
-      if (ibanDigits.length !== 16) return toast.error("Lütfen 16 haneli ibanınızı yazınız.");
+    if (form.iban && form.iban.length !== 16) {
+      return toast.error("IBAN 16 rakam olmalıdır.");
     }
     setLoading(true);
+    const ibanFull = form.iban ? "TR" + form.iban : "";
     const { data, error } = await apiFetch("/api/firma/profil", {
       method: "PUT",
-      body: JSON.stringify({ ...form, documents: { submitted: true } }),
+      body: JSON.stringify({ name: form.name, address: form.address, iban: ibanFull, documents: { submitted: true } }),
     });
     setLoading(false);
 
@@ -67,15 +67,22 @@ export default function FirmaEvrak() {
           </div>
           <div>
             <Label htmlFor="iban">IBAN (Ödeme için)</Label>
-            <Input
-              id="iban"
-              placeholder="16 haneli IBAN numaranız (sadece rakam)"
-              value={form.iban}
-              onChange={(e) => setForm({ ...form, iban: e.target.value })}
-              className="mt-1 font-mono"
-              maxLength={26}
-            />
-            <p className="text-xs text-gray-400 mt-1">Lütfen 16 haneli ibanınızı yazınız.</p>
+            <div className="flex mt-1">
+              <span className="flex items-center px-3 bg-gray-100 border border-r-0 border-input rounded-l-md text-sm font-mono font-semibold text-gray-700 select-none">TR</span>
+              <Input
+                id="iban"
+                placeholder="16 haneli numara"
+                value={form.iban}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                  setForm({ ...form, iban: digits });
+                }}
+                className="rounded-l-none font-mono"
+                maxLength={16}
+                inputMode="numeric"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Sadece 16 rakam girin. (TR + 16 rakam)</p>
           </div>
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading ? "Kaydediliyor..." : "Kaydı Tamamla"}
