@@ -20,6 +20,7 @@ interface StudentDetail {
     spouseFirstName: string | null; spouseLastName: string | null;
     spousePhone: string | null; spouseProfession: string | null;
     extraPhone: string | null; extraPhoneRelation: string | null;
+    parentRelation: string | null; spouseRelation: string | null;
   } | null;
 }
 
@@ -63,32 +64,45 @@ export default function SoforOgrenciDetay() {
           {student.phone && (
             <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.phone} /></p>
           )}
+          {student.parent?.address && (
+            <p className="flex items-start gap-1.5 text-gray-500"><MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {student.parent.address}</p>
+          )}
         </div>
       </div>
 
       {student.parent && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-          <h2 className="font-semibold text-gray-900 text-sm mb-3">Veli Bilgileri</h2>
+          <h2 className="font-semibold text-gray-900 text-sm mb-3">İletişim Bilgileri</h2>
           <div className="space-y-2 text-sm text-gray-700">
+            {student.parent.parentRelation && (
+              <span className="inline-block text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 mb-1">
+                {student.parent.parentRelation}
+              </span>
+            )}
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
             <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.phone} /></p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
-            {student.parent.address && (
-              <p className="flex items-start gap-1.5 text-gray-600"><MapPin className="w-3.5 h-3.5 mt-0.5" /> {student.parent.address}</p>
-            )}
           </div>
         </div>
       )}
 
       {student.parent?.spouseFirstName && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h2 className="font-semibold text-gray-900 text-sm mb-3">Eş / Diğer Veli</h2>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            {student.parent.spouseRelation ? (
+              <span className="inline-block text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                {student.parent.spouseRelation}
+              </span>
+            ) : (
+              <h2 className="font-semibold text-gray-900 text-sm">Eş / Diğer Veli</h2>
+            )}
+          </div>
           <div className="space-y-2 text-sm text-gray-700">
             <p className="font-medium">{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
             {student.parent.spousePhone && (
               <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.spousePhone} /></p>
             )}
-            {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
+            {student.parent.spouseProfession && <p>Meslek: {student.parent.spouseProfession}</p>}
           </div>
         </div>
       )}

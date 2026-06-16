@@ -31,6 +31,8 @@ export async function GET(
           spouseProfession: true,
           extraPhone: true,
           extraPhoneRelation: true,
+          parentRelation: true,
+          spouseRelation: true,
           plainPassword: true,
           paymentDay: true,
         },

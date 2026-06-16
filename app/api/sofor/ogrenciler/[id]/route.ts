@@ -21,6 +21,7 @@ export async function GET(
           spouseFirstName: true, spouseLastName: true,
           spousePhone: true, spouseProfession: true,
           extraPhone: true, extraPhoneRelation: true,
+          parentRelation: true, spouseRelation: true,
         },
       },
     },

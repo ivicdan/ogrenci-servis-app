@@ -54,6 +54,8 @@ interface StudentDetail {
     spouseProfession: string | null;
     extraPhone: string | null;
     extraPhoneRelation: string | null;
+    parentRelation: string | null;
+    spouseRelation: string | null;
     plainPassword: string | null;
     paymentDay: number | null;
   } | null;
@@ -179,6 +181,9 @@ export default function OgrenciDetay() {
               {student.phone && (
                 <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.phone} /></p>
               )}
+              {student.parent?.address && (
+                <p className="flex items-start gap-1 text-gray-500"><MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {student.parent.address}</p>
+              )}
             </div>
           </div>
         </div>
@@ -221,25 +226,35 @@ export default function OgrenciDetay() {
 
       {student.parent && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-          <h2 className="font-semibold text-gray-900 text-sm mb-3">Veli Bilgileri</h2>
+          <h2 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
+            İletişim Bilgileri
+          </h2>
           <div className="space-y-1.5 text-sm text-gray-700">
+            {student.parent.parentRelation && (
+              <span className="inline-block text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 mb-1">
+                {student.parent.parentRelation}
+              </span>
+            )}
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
             <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.phone} /></p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
             {student.parent.paymentDay != null && (
               <p className="text-blue-700 font-medium">Ödeme Günü: Her ayın {student.parent.paymentDay}. günü</p>
             )}
-            {student.parent.address && (
-              <p className="flex items-start gap-1.5 text-gray-600"><MapPin className="w-3.5 h-3.5 mt-0.5" /> {student.parent.address}</p>
-            )}
             {student.parent.spouseFirstName && (
               <div className="pt-2 border-t border-gray-100 mt-2">
-                <p className="font-medium text-xs text-gray-500 mb-1">Eş / Diğer Veli</p>
-                <p>{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
+                {student.parent.spouseRelation ? (
+                  <span className="inline-block text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 mb-1">
+                    {student.parent.spouseRelation}
+                  </span>
+                ) : (
+                  <p className="font-medium text-xs text-gray-500 mb-1">Eş / Diğer Veli</p>
+                )}
+                <p className="font-medium">{student.parent.spouseFirstName} {student.parent.spouseLastName}</p>
                 {student.parent.spousePhone && (
                   <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.spousePhone!} /></p>
                 )}
-                {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
+                {student.parent.spouseProfession && <p>Meslek: {student.parent.spouseProfession}</p>}
               </div>
             )}
             {student.parent.extraPhone && (

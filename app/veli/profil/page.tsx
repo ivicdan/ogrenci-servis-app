@@ -36,6 +36,8 @@ export default function VeliProfil() {
           spouseLastName: data.spouseLastName ?? "",
           spousePhone: data.spousePhone ?? "",
           spouseProfession: data.spouseProfession ?? "",
+          spouseRelation: data.spouseRelation ?? "",
+          parentRelation: data.parentRelation ?? "",
           studentFirstName: data.student?.firstName ?? "",
           studentLastName: data.student?.lastName ?? "",
           studentBirthDate: data.student?.birthDate ? data.student.birthDate.slice(0, 10) : "",
@@ -137,7 +139,25 @@ export default function VeliProfil() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-          <h2 className="font-semibold text-gray-900 text-sm">VELİ BİLGİLERİ</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 text-sm">
+              {f("parentRelation") ? `VELİ BİLGİLERİ — ${f("parentRelation").toUpperCase()}` : "VELİ BİLGİLERİ"}
+            </h2>
+          </div>
+          <div>
+            <Label>Bu kişi kim?</Label>
+            <Select value={f("parentRelation")} onValueChange={(v) => s("parentRelation", v ?? "")}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Seçin..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Anne">Anne</SelectItem>
+                <SelectItem value="Baba">Baba</SelectItem>
+                <SelectItem value="Vasi">Vasi</SelectItem>
+                <SelectItem value="Diğer">Diğer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label>Telefon Numarası</Label>
             <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("phone")} onChange={(e) => s("phone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
@@ -168,7 +188,25 @@ export default function VeliProfil() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-          <h2 className="font-semibold text-gray-900 text-sm">EŞ / DİĞER VELİ</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 text-sm">
+              {f("spouseRelation") ? `EŞ / DİĞER VELİ — ${f("spouseRelation").toUpperCase()}` : "EŞ / DİĞER VELİ"}
+            </h2>
+          </div>
+          <div>
+            <Label>Bu kişi kim?</Label>
+            <Select value={f("spouseRelation")} onValueChange={(v) => s("spouseRelation", v ?? "")}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Seçin..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Anne">Anne</SelectItem>
+                <SelectItem value="Baba">Baba</SelectItem>
+                <SelectItem value="Vasi">Vasi</SelectItem>
+                <SelectItem value="Diğer">Diğer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Ad</Label>

@@ -57,6 +57,8 @@ export async function PUT(req: NextRequest) {
     spouseProfession,
     extraPhone,
     extraPhoneRelation,
+    parentRelation,
+    spouseRelation,
     studentFirstName,
     studentLastName,
     studentBirthDate,
@@ -89,6 +91,8 @@ export async function PUT(req: NextRequest) {
         spouseProfession,
         extraPhone: extraPhone || null,
         extraPhoneRelation: extraPhoneRelation || null,
+        parentRelation: parentRelation || null,
+        spouseRelation: spouseRelation || null,
       },
     }),
     prisma.student.update({

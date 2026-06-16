@@ -155,8 +155,10 @@ model Parent {
   spouseLastName     String?
   spousePhone        String?
   spouseProfession   String?
+  spouseRelation     String?
   extraPhone         String?
   extraPhoneRelation String?
+  parentRelation     String?
   paymentDay         Int?
   plainPassword      String?
   sessionToken       String?
