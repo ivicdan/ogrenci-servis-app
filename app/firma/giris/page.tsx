@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Building2, Eye, EyeOff } from "lucide-react";
@@ -12,7 +12,7 @@ import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 const STORAGE_KEY = "firma_remember";
 
-export default function FirmaGiris() {
+function FirmaGirisInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({ taxOrTcId: "", password: "" });
@@ -110,5 +110,13 @@ export default function FirmaGiris() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function FirmaGiris() {
+  return (
+    <Suspense>
+      <FirmaGirisInner />
+    </Suspense>
   );
 }

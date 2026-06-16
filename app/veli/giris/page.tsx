@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, Eye, EyeOff } from "lucide-react";
@@ -12,7 +12,7 @@ import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 const STORAGE_KEY = "veli_remember";
 
-export default function VeliGiris() {
+function VeliGirisInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({ studentTcId: "", password: "" });
@@ -108,5 +108,13 @@ export default function VeliGiris() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function VeliGiris() {
+  return (
+    <Suspense>
+      <VeliGirisInner />
+    </Suspense>
   );
 }

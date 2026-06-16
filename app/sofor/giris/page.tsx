@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Bus, Eye, EyeOff } from "lucide-react";
@@ -12,7 +12,7 @@ import { apiFetch, setToken, setUserType } from "@/lib/api-client";
 
 const STORAGE_KEY = "sofor_remember";
 
-export default function SoforGiris() {
+function SoforGirisInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({ driverCode: "", password: "" });
@@ -107,5 +107,13 @@ export default function SoforGiris() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function SoforGiris() {
+  return (
+    <Suspense>
+      <SoforGirisInner />
+    </Suspense>
   );
 }
