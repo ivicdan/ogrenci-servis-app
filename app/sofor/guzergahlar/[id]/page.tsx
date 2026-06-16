@@ -300,7 +300,18 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                         </button>
                       </>
                     )}
-                    {isPickedUp && !isDroppedOff && <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>}
+                    {isPickedUp && !isDroppedOff && (
+                      <>
+                        <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>
+                        <button
+                          onClick={() => resetAttendance(student.id, "PICKUP")}
+                          className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
+                          title="Geri al"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Düzenle
+                        </button>
+                      </>
+                    )}
                     {isDroppedOff && <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-medium">Okula İndirildi</span>}
                   </div>
                   <p className="text-xs text-gray-500">
