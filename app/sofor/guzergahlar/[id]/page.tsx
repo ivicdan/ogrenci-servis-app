@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, School } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, School, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -114,6 +114,16 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     setCompleting(false);
     if (error) return toast.error(error);
     toast.success(`Sefer tamamlandı! ${data?.notified ?? 0} veliye bildirim gönderildi.`);
+  }
+
+  async function resetAttendance(studentId: string, type: "PICKUP" | "DROPOFF") {
+    setProcessing(studentId + type + "reset");
+    await apiFetch("/api/sofor/yoklama/sifirla", {
+      method: "POST",
+      body: JSON.stringify({ studentId, type }),
+    });
+    setProcessing(null);
+    loadRoute();
   }
 
   async function markAttendance(
@@ -266,8 +276,30 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-gray-900">{student.firstName} {student.lastName}</p>
-                    {isAbsent && <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>}
-                    {isMarkedAbsent && <span className="text-xs bg-red-200 text-red-700 px-2 py-0.5 rounded-full font-medium">Servise Binmedi</span>}
+                    {isAbsent && (
+                      <>
+                        <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>
+                        <button
+                          onClick={() => resetAttendance(student.id, "PICKUP")}
+                          className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
+                          title="Geri al"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Düzenle
+                        </button>
+                      </>
+                    )}
+                    {isMarkedAbsent && (
+                      <>
+                        <span className="text-xs bg-red-200 text-red-700 px-2 py-0.5 rounded-full font-medium">Servise Binmedi</span>
+                        <button
+                          onClick={() => resetAttendance(student.id, "PICKUP")}
+                          className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
+                          title="Geri al"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Düzenle
+                        </button>
+                      </>
+                    )}
                     {isPickedUp && !isDroppedOff && <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">Alındı</span>}
                     {isDroppedOff && <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-medium">Okula İndirildi</span>}
                   </div>
@@ -319,8 +351,8 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   </>
                 )}
 
-                {/* Okula İndirildi butonu */}
-                {!isAbsent && !isMarkedAbsent && !isDroppedOff && (
+                {/* Okula İndirildi butonu — sadece "Alındı" işaretlendikten sonra */}
+                {isPickedUp && !isDroppedOff && (
                   <Button
                     size="sm"
                     variant="outline"
