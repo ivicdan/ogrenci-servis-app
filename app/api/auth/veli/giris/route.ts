@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 
@@ -46,7 +47,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
     }
 
-    const token = signToken({ id: parent.id, userType: "PARENT" });
+    const sessionToken = randomUUID();
+    await prisma.parent.update({ where: { id: parent.id }, data: { sessionToken } });
+    const token = signToken({ id: parent.id, userType: "PARENT", sessionToken });
 
     return NextResponse.json({
       token,

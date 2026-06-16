@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Building2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const STORAGE_KEY = "firma_remember";
 
 export default function FirmaGiris() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ taxOrTcId: "", password: "" });
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -25,7 +26,10 @@ export default function FirmaGiris() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) { setForm(JSON.parse(saved)); setRemember(true); }
     } catch {}
-  }, []);
+    if (searchParams.get("reason") === "session") {
+      toast.error("Başka bir cihazdan giriş yapıldı. Oturumunuz kapatıldı.", { duration: 6000 });
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

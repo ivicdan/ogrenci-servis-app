@@ -52,6 +52,8 @@ interface StudentDetail {
     spouseLastName: string | null;
     spousePhone: string | null;
     spouseProfession: string | null;
+    extraPhone: string | null;
+    extraPhoneRelation: string | null;
     plainPassword: string | null;
     paymentDay: number | null;
   } | null;
@@ -238,6 +240,12 @@ export default function OgrenciDetay() {
                   <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.spousePhone!} /></p>
                 )}
                 {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
+              </div>
+            )}
+            {student.parent.extraPhone && (
+              <div className="pt-2 border-t border-gray-100 mt-2">
+                <p className="font-medium text-xs text-gray-500 mb-1">Ek İletişim{student.parent.extraPhoneRelation ? ` — ${student.parent.extraPhoneRelation}` : ""}</p>
+                <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.extraPhone} /></p>
               </div>
             )}
           </div>

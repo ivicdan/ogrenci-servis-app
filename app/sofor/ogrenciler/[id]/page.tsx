@@ -19,6 +19,7 @@ interface StudentDetail {
     address: string; profession: string | null;
     spouseFirstName: string | null; spouseLastName: string | null;
     spousePhone: string | null; spouseProfession: string | null;
+    extraPhone: string | null; extraPhoneRelation: string | null;
   } | null;
 }
 
@@ -89,6 +90,15 @@ export default function SoforOgrenciDetay() {
             )}
             {student.parent.spouseProfession && <p>{student.parent.spouseProfession}</p>}
           </div>
+        </div>
+      )}
+
+      {student.parent?.extraPhone && (
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <h2 className="font-semibold text-gray-900 text-sm mb-3">
+            Ek İletişim{student.parent.extraPhoneRelation ? ` — ${student.parent.extraPhoneRelation}` : ""}
+          </h2>
+          <p className="flex items-center gap-1.5 text-sm text-gray-700"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.extraPhone} /></p>
         </div>
       )}
     </div>

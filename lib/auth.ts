@@ -9,6 +9,7 @@ export type UserType = "FIRM" | "DRIVER" | "PARENT";
 export interface JwtPayload {
   id: string;
   userType: UserType;
+  sessionToken?: string;
   iat?: number;
   exp?: number;
 }

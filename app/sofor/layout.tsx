@@ -38,6 +38,20 @@ export default function SoforLayout({ children }: { children: React.ReactNode })
     return () => clearInterval(interval);
   }, [isPublic]);
 
+  useEffect(() => {
+    if (isPublic) return;
+    const checkSession = () => {
+      apiFetch<{ valid: boolean }>("/api/sofor/session-check").then(({ data }) => {
+        if (data?.valid === false) {
+          clearToken();
+          router.push("/sofor/giris?reason=session");
+        }
+      });
+    };
+    const interval = setInterval(checkSession, 30000);
+    return () => clearInterval(interval);
+  }, [isPublic, router]);
+
   if (isPublic) return <>{children}</>;
 
   return (

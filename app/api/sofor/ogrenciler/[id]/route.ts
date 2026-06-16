@@ -20,6 +20,7 @@ export async function GET(
           address: true, profession: true,
           spouseFirstName: true, spouseLastName: true,
           spousePhone: true, spouseProfession: true,
+          extraPhone: true, extraPhoneRelation: true,
         },
       },
     },

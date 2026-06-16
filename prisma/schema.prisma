@@ -75,6 +75,7 @@ model Firm {
   address       String?
   iban          String?
   documents     Json?
+  sessionToken  String?
   drivers       Driver[]
   students      Student[]
   messages      Message[]
@@ -96,6 +97,7 @@ model Driver {
   plateNumber   String?
   assistantName String?
   plainPassword String?
+  sessionToken  String?
   firmId        String
   firm          Firm           @relation(fields: [firmId], references: [id])
   status        DriverStatus   @default(ACTIVE)
@@ -149,15 +151,18 @@ model Parent {
   otpExpiry        DateTime?
   profession       String?
   address          String
-  spouseFirstName  String?
-  spouseLastName   String?
-  spousePhone      String?
-  spouseProfession String?
-  paymentDay       Int?
-  plainPassword    String?
-  notifications    Notification[]
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  spouseFirstName    String?
+  spouseLastName     String?
+  spousePhone        String?
+  spouseProfession   String?
+  extraPhone         String?
+  extraPhoneRelation String?
+  paymentDay         Int?
+  plainPassword      String?
+  sessionToken       String?
+  notifications      Notification[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
 model Route {

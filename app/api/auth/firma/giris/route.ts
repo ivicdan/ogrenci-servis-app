@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 
@@ -27,7 +28,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
     }
 
-    const token = signToken({ id: firm.id, userType: "FIRM" });
+    const sessionToken = randomUUID();
+    await prisma.firm.update({ where: { id: firm.id }, data: { sessionToken } });
+    const token = signToken({ id: firm.id, userType: "FIRM", sessionToken });
 
     return NextResponse.json({
       token,

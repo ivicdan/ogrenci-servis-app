@@ -44,6 +44,8 @@ export default function VeliProfil() {
           studentTeacher: data.student?.teacher ?? "",
           studentPhone: data.student?.phone ?? "",
           studentStudyTime: data.student?.studyTime ?? "MORNING",
+          extraPhone: data.extraPhone ?? "",
+          extraPhoneRelation: data.extraPhoneRelation ?? "",
         });
       }
     });
@@ -54,9 +56,11 @@ export default function VeliProfil() {
     const phone = form.phone ?? "";
     const spousePhone = form.spousePhone ?? "";
     const studentPhone = form.studentPhone ?? "";
+    const extraPhone = form.extraPhone ?? "";
     if (phone && !validatePhone(phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
     if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli telefonu 11 haneli ve 0 ile başlamalıdır.");
     if (studentPhone && !validatePhone(studentPhone)) return toast.error("Öğrenci telefonu 11 haneli olmalıdır.");
+    if (extraPhone && !validatePhone(extraPhone)) return toast.error("Ek iletişim telefonu 11 haneli ve 0 ile başlamalıdır.");
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
       method: "PUT",
@@ -187,6 +191,23 @@ export default function VeliProfil() {
           <div>
             <Label>Meslek</Label>
             <Input value={f("spouseProfession")} onChange={(e) => s("spouseProfession", e.target.value)} className="mt-1" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
+          <h2 className="font-semibold text-gray-900 text-sm">EK İLETİŞİM <span className="text-gray-400 font-normal">(İsteğe bağlı)</span></h2>
+          <div>
+            <Label>Telefon Numarası</Label>
+            <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız" value={f("extraPhone")} onChange={(e) => s("extraPhone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
+            {f("extraPhone").length > 0 && f("extraPhone")[0] !== "0" ? (
+              <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">11 haneli, başında 0 ile yazınız.</p>
+            )}
+          </div>
+          <div>
+            <Label>Yakınlık Derecesi</Label>
+            <Input placeholder="Örn: Anne, Baba, Büyükanne, Komşu..." value={f("extraPhoneRelation")} onChange={(e) => s("extraPhoneRelation", e.target.value)} className="mt-1" />
           </div>
         </div>
 

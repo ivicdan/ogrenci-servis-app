@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 
@@ -36,12 +37,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const sessionToken = randomUUID();
     await prisma.parent.update({
       where: { id: parent.id },
-      data: { phoneVerified: true, otpCode: null, otpExpiry: null },
+      data: { phoneVerified: true, otpCode: null, otpExpiry: null, sessionToken },
     });
 
-    const token = signToken({ id: parent.id, userType: "PARENT" });
+    const token = signToken({ id: parent.id, userType: "PARENT", sessionToken });
 
     return NextResponse.json({
       token,

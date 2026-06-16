@@ -43,6 +43,20 @@ export default function FirmaLayout({ children }: { children: React.ReactNode })
     return () => clearInterval(interval);
   }, [isPublic]);
 
+  useEffect(() => {
+    if (isPublic) return;
+    const checkSession = () => {
+      apiFetch<{ valid: boolean }>("/api/firma/session-check").then(({ data }) => {
+        if (data?.valid === false) {
+          clearToken();
+          router.push("/firma/giris?reason=session");
+        }
+      });
+    };
+    const interval = setInterval(checkSession, 30000);
+    return () => clearInterval(interval);
+  }, [isPublic, router]);
+
   if (isPublic) return <>{children}</>;
 
   function handleLogout() {
