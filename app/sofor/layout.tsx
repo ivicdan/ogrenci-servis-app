@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Bus, Bell, LogOut, GraduationCap } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
+import { playNotificationSound, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 
 const navItems = [
   { href: "/sofor/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
@@ -19,10 +20,13 @@ export default function SoforLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const [unread, setUnread] = useState(0);
+  const prevUnread = useRef(-1);
 
   useEffect(() => {
     if (!isPublic && getUserType() !== "DRIVER") {
       router.replace("/sofor/giris");
+    } else if (!isPublic) {
+      requestNotificationPermission();
     }
   }, [isPublic, router]);
 
@@ -30,7 +34,14 @@ export default function SoforLayout({ children }: { children: React.ReactNode })
     if (isPublic) return;
     const fetchCount = () => {
       apiFetch<{ count: number }>("/api/sofor/bildirimler/count").then(({ data }) => {
-        if (data) setUnread(data.count);
+        if (data) {
+          if (prevUnread.current !== -1 && data.count > prevUnread.current) {
+            playNotificationSound();
+            showPushNotification("Yeni Bildirim", `${data.count - prevUnread.current} yeni bildiriminiz var.`);
+          }
+          prevUnread.current = data.count;
+          setUnread(data.count);
+        }
       });
     };
     fetchCount();
