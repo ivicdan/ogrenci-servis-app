@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { requireAuth } from "@/lib/auth";
 
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       documents: {
         ...existing,
         [docType]: { url: fileUrl, name: file.name, uploadedAt: new Date().toISOString() },
-      },
+      } as Prisma.InputJsonValue,
     },
   });
 
