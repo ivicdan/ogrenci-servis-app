@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, use, useRef } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw, Map } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw, Map, Play, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,8 +12,12 @@ import type { StudentMapPoint } from "@/components/route-map";
 
 const RouteMap = dynamic(() => import("@/components/route-map"), { ssr: false });
 
-interface Attendance {
-  status: string;
+interface Attendance { status: string; type: string; }
+
+interface AbsenceReport {
+  id: string;
+  startDate: string;
+  endDate: string;
   type: string;
 }
 
@@ -37,13 +41,20 @@ interface Student {
     pickupLng: number | null;
   } | null;
   attendances: Attendance[];
+  absenceReports: AbsenceReport[];
 }
 
 interface Route {
   id: string;
   name: string;
   type: string;
+  tripStartedAt: string | null;
   students: Student[];
+}
+
+function fmtDate(d: string) {
+  const dt = new Date(d);
+  return `${dt.getDate().toString().padStart(2, "0")}.${(dt.getMonth() + 1).toString().padStart(2, "0")}.${dt.getFullYear()}`;
 }
 
 export default function GuzergahDetay({ params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +67,8 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
   const [orderedStudents, setOrderedStudents] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [driverLat, setDriverLat] = useState<number | null>(null);
   const [driverLng, setDriverLng] = useState<number | null>(null);
@@ -63,28 +76,20 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
   useEffect(() => { loadRoute(); }, [id]);
 
-  // Şoför konumu takibi — her 15 saniyede konum gönder + ETA kontrol
   useEffect(() => {
     if (!navigator.geolocation) return;
-
     function sendLocation() {
       navigator.geolocation.getCurrentPosition((pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setDriverLat(lat);
         setDriverLng(lng);
-        apiFetch("/api/sofor/konum", {
-          method: "POST",
-          body: JSON.stringify({ lat, lng }),
-        });
+        apiFetch("/api/sofor/konum", { method: "POST", body: JSON.stringify({ lat, lng }) });
       });
     }
-
     sendLocation();
     locationIntervalRef.current = setInterval(sendLocation, 15000);
-    return () => {
-      if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
-    };
+    return () => { if (locationIntervalRef.current) clearInterval(locationIntervalRef.current); };
   }, []);
 
   async function loadRoute() {
@@ -104,26 +109,18 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
   }
 
   function toggleStudent(sid: string) {
-    setOrderedStudents((prev) =>
-      prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]
-    );
+    setOrderedStudents((prev) => prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]);
   }
 
   function moveUp(idx: number) {
     if (idx === 0) return;
-    setOrderedStudents((prev) => {
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      return next;
-    });
+    setOrderedStudents((prev) => { const n = [...prev]; [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n; });
   }
 
   function moveDown(idx: number) {
     setOrderedStudents((prev) => {
       if (idx === prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      return next;
+      const n = [...prev]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; return n;
     });
   }
 
@@ -131,14 +128,31 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     setSaving(true);
     const { error } = await apiFetch(`/api/sofor/guzergahlar/${id}`, {
       method: "PUT",
-      body: JSON.stringify({
-        students: orderedStudents.map((sid, i) => ({ id: sid, order: i + 1 })),
-      }),
+      body: JSON.stringify({ students: orderedStudents.map((sid, i) => ({ id: sid, order: i + 1 })) }),
     });
     setSaving(false);
     if (error) return toast.error(error);
     toast.success("Güzergah öğrencileri güncellendi!");
     setEditOpen(false);
+    loadRoute();
+  }
+
+  async function startTrip() {
+    setStarting(true);
+    const { error } = await apiFetch(`/api/sofor/guzergahlar/${id}/baslat`, { method: "POST" });
+    setStarting(false);
+    if (error) return toast.error(error);
+    toast.success("Sefer başlatıldı!");
+    setMapOpen(true);
+    loadRoute();
+  }
+
+  async function cancelTrip() {
+    setCanceling(true);
+    const { error } = await apiFetch(`/api/sofor/guzergahlar/${id}/baslat`, { method: "DELETE" });
+    setCanceling(false);
+    if (error) return toast.error(error);
+    toast.success("Sefer iptal edildi.");
     loadRoute();
   }
 
@@ -153,19 +167,12 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
   async function resetAttendance(studentId: string, type: "PICKUP" | "DROPOFF") {
     setProcessing(studentId + type + "reset");
-    await apiFetch("/api/sofor/yoklama/sifirla", {
-      method: "POST",
-      body: JSON.stringify({ studentId, type }),
-    });
+    await apiFetch("/api/sofor/yoklama/sifirla", { method: "POST", body: JSON.stringify({ studentId, type }) });
     setProcessing(null);
     loadRoute();
   }
 
-  async function markAttendance(
-    studentId: string,
-    status: "PICKED_UP" | "ABSENT",
-    type?: "PICKUP" | "DROPOFF"
-  ) {
+  async function markAttendance(studentId: string, status: "PICKED_UP" | "ABSENT", type?: "PICKUP" | "DROPOFF") {
     setProcessing(studentId + (type ?? ""));
     const attendType = type ?? (route?.type?.includes("PICKUP") ? "PICKUP" : "DROPOFF");
     const { error } = await apiFetch("/api/sofor/yoklama", {
@@ -174,61 +181,83 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     });
     setProcessing(null);
     if (error) return toast.error(error);
-    if (type === "DROPOFF" && status === "PICKED_UP") {
-      toast.success("Okula bırakıldı! Veliye bildirim gönderildi.");
-    } else {
-      toast.success(status === "PICKED_UP" ? "✓ Alındı işaretlendi" : "Devamsız işaretlendi");
-    }
+    toast.success(status === "PICKED_UP" ? "✓ Alındı işaretlendi" : "Devamsız işaretlendi");
     loadRoute();
   }
 
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
   if (!route) return <div className="text-center py-12 text-gray-400">Güzergah bulunamadı</div>;
 
+  const tripStarted = !!route.tripStartedAt;
   const studentMap = Object.fromEntries(allStudents.map((s) => [s.id, s]));
+
+  // Başlangıç noktası: bugün aktif devamsızlığı olmayan ilk öğrenci
+  const startStudent = route.students.find(
+    (s) => s.parent?.pickupLat && s.parent?.pickupLng && s.absenceReports.length === 0
+      && !s.attendances.find((a) => a.type === "PICKUP" && (a.status === "NOTIFIED_ABSENT" || a.status === "ABSENT"))
+  );
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <Link href="/sofor/guzergahlar" className="text-gray-400 hover:text-gray-600">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-gray-900">{route.name}</h1>
-            <p className="text-sm text-gray-500">{route.students.length} öğrenci</p>
+            <p className="text-sm text-gray-500 flex items-center gap-1.5">
+              {route.students.length} öğrenci
+              {tripStarted && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">Sefer Aktif</span>}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-blue-200 text-blue-700 hover:bg-blue-50"
-            onClick={() => setMapOpen((v) => !v)}
-          >
-            <Map className="w-4 h-4 mr-1" /> Harita
-          </Button>
-          <Button
-            size="sm"
-            className="bg-green-600 hover:bg-green-700"
-            onClick={completeTrip}
-            disabled={completing}
-          >
-            <CheckCheck className="w-4 h-4 mr-1" />
-            {completing ? "..." : "Sefer Tamamlandı"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={openEdit} className="border-green-200 text-green-700 hover:bg-green-50">
-            <UserPlus className="w-4 h-4 mr-1" /> Düzenle
-          </Button>
+
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          {!tripStarted ? (
+            <>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={startTrip} disabled={starting}>
+                <Play className="w-3.5 h-3.5 mr-1" /> {starting ? "..." : "Sefere Başla"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={openEdit} className="border-green-200 text-green-700 hover:bg-green-50">
+                <UserPlus className="w-3.5 h-3.5 mr-1" /> Düzenle
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => setMapOpen((v) => !v)}>
+                <Map className="w-3.5 h-3.5 mr-1" /> Harita
+              </Button>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={completeTrip} disabled={completing}>
+                <CheckCheck className="w-3.5 h-3.5 mr-1" /> {completing ? "..." : "Sefer Tamamlandı"}
+              </Button>
+              <Button size="sm" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50" onClick={cancelTrip} disabled={canceling}>
+                <Undo2 className="w-3.5 h-3.5 mr-1" /> {canceling ? "..." : "Geri Al"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Başlangıç noktası bilgisi */}
+      {tripStarted && startStudent && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 mb-4 text-sm text-blue-800 flex items-center gap-2">
+          <Play className="w-4 h-4 flex-shrink-0" />
+          <span>
+            <span className="font-semibold">Başlangıç:</span> {startStudent.firstName} {startStudent.lastName} konumu
+            {startStudent.parent?.pickupLat && (
+              <span className="text-xs ml-1 text-blue-500">
+                ({startStudent.parent.pickupLat.toFixed(5)}, {startStudent.parent.pickupLng?.toFixed(5)})
+              </span>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* Öğrenci Düzenleme Dialogu */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-sm mx-auto max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Güzergah Öğrencileri</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Güzergah Öğrencileri</DialogTitle></DialogHeader>
           <p className="text-xs text-gray-500 -mt-2">Öğrenci ekleyin, çıkarın ve sıralarını düzenleyin.</p>
 
           {orderedStudents.length > 0 && (
@@ -271,7 +300,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   <input type="checkbox" checked={selected} onChange={() => toggleStudent(s.id)} className="w-4 h-4 rounded text-green-600" />
                   <div>
                     <p className="font-medium text-sm text-gray-900">{s.firstName} {s.lastName}</p>
-                    <p className="text-xs text-gray-500">{s.class} · {s.studyTime === "MORNING" ? "Sabah" : "Öğlen"}</p>
+                    <p className="text-xs text-gray-500">{s.class}</p>
                   </div>
                 </label>
               );
@@ -294,11 +323,12 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
           .map((s) => {
             const pickupAtt = s.attendances.find((a) => a.type === "PICKUP");
             const dropoffAtt = s.attendances.find((a) => a.type === "DROPOFF");
+            const hasAbsenceReport = s.absenceReports.length > 0;
             let status: StudentMapPoint["status"] = "pending";
             if (dropoffAtt?.status === "PICKED_UP") status = "dropped_off";
             else if (pickupAtt?.status === "PICKED_UP") status = "picked_up";
             else if (pickupAtt?.status === "ABSENT") status = "absent";
-            else if (pickupAtt?.status === "NOTIFIED_ABSENT") status = "notified_absent";
+            else if (pickupAtt?.status === "NOTIFIED_ABSENT" || hasAbsenceReport) status = "notified_absent";
             return {
               id: s.id,
               firstName: s.firstName,
@@ -320,11 +350,11 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
         return (
           <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-            <div className="bg-white px-4 py-2 flex items-center gap-2 text-xs text-gray-500 border-b border-gray-100">
+            <div className="bg-white px-4 py-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 border-b border-gray-100">
               <span className="w-3 h-3 rounded-full bg-gray-400 inline-block" /> Bekliyor
-              <span className="w-3 h-3 rounded-full bg-green-600 inline-block ml-2" /> Alındı
-              <span className="w-3 h-3 rounded-full bg-blue-600 inline-block ml-2" /> İndirildi
-              <span className="w-3 h-3 rounded-full bg-orange-500 inline-block ml-2" /> Gelmeyecek
+              <span className="w-3 h-3 rounded-full bg-green-600 inline-block ml-1" /> Alındı
+              <span className="w-3 h-3 rounded-full bg-blue-600 inline-block ml-1" /> İndirildi
+              <span className="w-3 h-3 rounded-full bg-orange-500 inline-block ml-1" /> Gelmeyecek
             </div>
             <RouteMap students={mapPoints} driverLat={driverLat} driverLng={driverLng} height={300} />
           </div>
@@ -342,7 +372,8 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
         {route.students.map((student, idx) => {
           const pickupAtt = student.attendances.find((a) => a.type === "PICKUP");
           const dropoffAtt = student.attendances.find((a) => a.type === "DROPOFF");
-          const isAbsent = pickupAtt?.status === "NOTIFIED_ABSENT";
+          const activeAbsence = student.absenceReports[0];
+          const isAbsent = pickupAtt?.status === "NOTIFIED_ABSENT" || !!activeAbsence;
           const isMarkedAbsent = pickupAtt?.status === "ABSENT";
           const isPickedUp = pickupAtt?.status === "PICKED_UP";
           const isDroppedOff = dropoffAtt?.status === "PICKED_UP";
@@ -363,16 +394,24 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-gray-900">{student.firstName} {student.lastName}</p>
-                    {isAbsent && (
+                    {isAbsent && !isPickedUp && (
                       <>
-                        <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">Gelmeyecek</span>
-                        <button
-                          onClick={() => resetAttendance(student.id, "PICKUP")}
-                          className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
-                          title="Geri al"
-                        >
-                          <RotateCcw className="w-3 h-3" /> Düzenle
-                        </button>
+                        <span className="text-xs bg-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                          Gelmeyecek
+                          {activeAbsence && (() => {
+                            const s = fmtDate(activeAbsence.startDate);
+                            const e = fmtDate(activeAbsence.endDate);
+                            return s === e ? ` (${s})` : ` (${s}–${e})`;
+                          })()}
+                        </span>
+                        {!activeAbsence && (
+                          <button
+                            onClick={() => resetAttendance(student.id, "PICKUP")}
+                            className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Düzenle
+                          </button>
+                        )}
                       </>
                     )}
                     {isMarkedAbsent && (
@@ -381,7 +420,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                         <button
                           onClick={() => resetAttendance(student.id, "PICKUP")}
                           className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
-                          title="Geri al"
                         >
                           <RotateCcw className="w-3 h-3" /> Düzenle
                         </button>
@@ -393,7 +431,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                         <button
                           onClick={() => resetAttendance(student.id, "PICKUP")}
                           className="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-0.5 border border-gray-200 rounded-full px-1.5 py-0.5 bg-white"
-                          title="Geri al"
                         >
                           <RotateCcw className="w-3 h-3" /> Düzenle
                         </button>
@@ -402,7 +439,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                     {isDroppedOff && <span className="text-xs bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-medium">Okula İndirildi</span>}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {student.class}{student.teacher && ` · ${student.teacher}`}{" · "}{student.studyTime === "MORNING" ? "Sabah" : "Öğlen"}
+                    {student.class}{student.teacher && ` · ${student.teacher}`}
                   </p>
                 </div>
               </div>
@@ -416,40 +453,38 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   {student.parent.spouseFirstName && (
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span>👤 {student.parent.spouseFirstName} {student.parent.spouseLastName}</span>
-                      {student.parent.spousePhone && (
-                        <CopyPhone phone={student.parent.spousePhone} className="text-blue-500" />
-                      )}
+                      {student.parent.spousePhone && <CopyPhone phone={student.parent.spousePhone} className="text-blue-500" />}
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex gap-2 ml-7 flex-wrap">
-                {/* Alındı / Yok butonları */}
-                {!isPickedUp && !isAbsent && !isMarkedAbsent && (
-                  <>
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700 min-w-[80px]"
-                      onClick={() => markAttendance(student.id, "PICKED_UP")}
-                      disabled={!!processingKey}
-                    >
-                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      {processing === student.id + "" ? "..." : "Alındı"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 min-w-[80px]"
-                      onClick={() => markAttendance(student.id, "ABSENT")}
-                      disabled={!!processingKey}
-                    >
-                      <XCircle className="w-3.5 h-3.5 mr-1" /> Yok
-                    </Button>
-                  </>
-                )}
+              {tripStarted && !isAbsent && !isMarkedAbsent && !isPickedUp && (
+                <div className="flex gap-2 ml-7 flex-wrap">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-600 hover:bg-green-700 min-w-[80px]"
+                    onClick={() => markAttendance(student.id, "PICKED_UP")}
+                    disabled={!!processingKey}
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                    {processing === student.id + "" ? "..." : "Alındı"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 border-red-200 text-red-600 hover:bg-red-50 min-w-[80px]"
+                    onClick={() => markAttendance(student.id, "ABSENT")}
+                    disabled={!!processingKey}
+                  >
+                    <XCircle className="w-3.5 h-3.5 mr-1" /> Yok
+                  </Button>
+                </div>
+              )}
 
-              </div>
+              {!tripStarted && !isAbsent && !isMarkedAbsent && !isPickedUp && (
+                <p className="ml-7 text-xs text-gray-400 italic">Sefere başlamak için "Sefere Başla" butonuna basın.</p>
+              )}
             </div>
           );
         })}

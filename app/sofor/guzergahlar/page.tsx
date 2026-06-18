@@ -14,18 +14,23 @@ interface Route {
   id: string;
   name: string;
   type: string;
+  tripStartedAt: string | null;
   _count: { students: number };
 }
 
 const routeTypeLabel: Record<string, string> = {
   MORNING_PICKUP: "Sabah Alış",
   MORNING_DROPOFF: "Sabah Bırakış",
-  AFTERNOON_PICKUP: "Öğle Alış",
-  AFTERNOON_DROPOFF: "Öğle Bırakış",
+  AFTERNOON_PICKUP: "Öğlen Alış",
+  AFTERNOON_DROPOFF: "Öğlen Bırakış",
 };
+
+const GIDIS_TYPES = ["MORNING_PICKUP", "AFTERNOON_PICKUP"];
+const DONUS_TYPES  = ["MORNING_DROPOFF", "AFTERNOON_DROPOFF"];
 
 export default function SoforGuzergahlar() {
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [tab, setTab] = useState<"gidis" | "donus">("gidis");
   const [form, setForm] = useState({ name: "", type: "MORNING_PICKUP" });
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,13 +57,31 @@ export default function SoforGuzergahlar() {
     loadRoutes();
   }
 
+  const tabTypes = tab === "gidis" ? GIDIS_TYPES : DONUS_TYPES;
+  const visible = routes.filter((r) => tabTypes.includes(r.type));
+
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-gray-900">Güzergahlarım</h1>
         <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setOpen(true)}>
           <Plus className="w-4 h-4 mr-1" /> Ekle
         </Button>
+      </div>
+
+      {/* Sekmeler */}
+      <div className="flex rounded-xl bg-gray-100 p-1 mb-5 gap-1">
+        {(["gidis", "donus"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === t ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t === "gidis" ? "🏫 Okula Gidiş" : "🏠 Eve Dönüş"}
+          </button>
+        ))}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -90,23 +113,31 @@ export default function SoforGuzergahlar() {
       </Dialog>
 
       <div className="space-y-3">
-        {routes.length === 0 && (
+        {visible.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <Bus className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p>Henüz güzergah yok</p>
+            <p className="text-sm">
+              {tab === "gidis" ? "Okula gidiş güzergahı yok" : "Eve dönüş güzergahı yok"}
+            </p>
+            <p className="text-xs mt-1">Sağ üstteki "Ekle" butonuyla güzergah oluşturun.</p>
           </div>
         )}
-        {routes.map((route) => (
+        {visible.map((route) => (
           <Link key={route.id} href={`/sofor/guzergahlar/${route.id}`}
             className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-green-200 hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-green-100 rounded-xl p-2.5">
-                <Bus className="w-5 h-5 text-green-600" />
+              <div className={`rounded-xl p-2.5 ${route.tripStartedAt ? "bg-green-100" : "bg-gray-100"}`}>
+                <Bus className={`w-5 h-5 ${route.tripStartedAt ? "text-green-600" : "text-gray-500"}`} />
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{route.name}</p>
-                <p className="text-xs text-gray-500">{routeTypeLabel[route.type] ?? route.type}</p>
+                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                  {routeTypeLabel[route.type] ?? route.type}
+                  {route.tripStartedAt && (
+                    <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-[10px] font-bold">Sefer Aktif</span>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-gray-400">

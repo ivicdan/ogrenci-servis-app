@@ -11,6 +11,10 @@ export async function GET(
 
   const { id } = await params;
 
+  const today = new Date();
+  const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(today); todayEnd.setHours(23, 59, 59, 999);
+
   const route = await prisma.route.findFirst({
     where: { id, driverId: user.id },
     include: {
@@ -32,12 +36,15 @@ export async function GET(
           },
           attendances: {
             where: {
-              date: {
-                gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                lt: new Date(new Date().setHours(23, 59, 59, 999)),
-              },
+              date: { gte: todayStart, lt: todayEnd },
             },
             orderBy: { createdAt: "desc" },
+          },
+          absenceReports: {
+            where: {
+              startDate: { lte: todayEnd },
+              endDate: { gte: todayStart },
+            },
           },
         },
       },

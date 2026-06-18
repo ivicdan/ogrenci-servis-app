@@ -19,6 +19,13 @@ function validatePhone(phone: string) {
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah",
   AFTERNOON: "Öğleden Sonra",
+  MORNING_NOON: "Sabah - Öğlen",
+  MORNING_EVENING: "Sabah - Akşam",
+  NOON_EVENING: "Öğlen - Akşam",
+  ONE_WAY_MORNING_TO_SCHOOL: "Tek Yön — Sabah Okula Gidiş",
+  ONE_WAY_NOON_TO_SCHOOL: "Tek Yön — Öğlen Okula Gidiş",
+  ONE_WAY_NOON_RETURN: "Tek Yön — Öğlen Eve Dönüş",
+  ONE_WAY_EVENING_RETURN: "Tek Yön — Akşam Eve Dönüş",
 };
 
 export default function VeliProfil() {
@@ -121,8 +128,13 @@ export default function VeliProfil() {
                   <SelectValue>{studyTimeLabel[f("studentStudyTime")] || "Seçin"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MORNING">Sabah</SelectItem>
-                  <SelectItem value="AFTERNOON">Öğleden Sonra</SelectItem>
+                  <SelectItem value="MORNING_NOON">Sabah - Öğlen</SelectItem>
+                  <SelectItem value="MORNING_EVENING">Sabah - Akşam</SelectItem>
+                  <SelectItem value="NOON_EVENING">Öğlen - Akşam</SelectItem>
+                  <SelectItem value="ONE_WAY_MORNING_TO_SCHOOL">Tek Yön — Sabah Okula Gidiş</SelectItem>
+                  <SelectItem value="ONE_WAY_NOON_TO_SCHOOL">Tek Yön — Öğlen Okula Gidiş</SelectItem>
+                  <SelectItem value="ONE_WAY_NOON_RETURN">Tek Yön — Öğlen Eve Dönüş</SelectItem>
+                  <SelectItem value="ONE_WAY_EVENING_RETURN">Tek Yön — Akşam Eve Dönüş</SelectItem>
                 </SelectContent>
               </Select>
             </div>

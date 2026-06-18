@@ -85,6 +85,7 @@ export default function OgrenciDetay() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [resettingPass, setResettingPass] = useState(false);
   const [newPass, setNewPass] = useState<string | null>(null);
+  const [togglingStatus, setTogglingStatus] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -104,6 +105,19 @@ export default function OgrenciDetay() {
     if (error) return toast.error(error);
     toast.success("Öğrenci pasife alındı.");
     router.push("/firma/ogrenciler");
+  }
+
+  async function handleToggleStatus() {
+    if (!student) return;
+    setTogglingStatus(true);
+    const { data, error } = await apiFetch<{ status: string }>(
+      `/api/firma/ogrenciler/${params.id}/status`,
+      { method: "PATCH" }
+    );
+    setTogglingStatus(false);
+    if (error) return toast.error(error);
+    setStudent((prev) => prev ? { ...prev, status: data!.status } : prev);
+    toast.success(data?.status === "ACTIVE" ? "Öğrenci aktif edildi." : "Öğrenci pasife alındı.");
   }
 
   async function handleResetPassword() {
@@ -149,6 +163,15 @@ export default function OgrenciDetay() {
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-4 h-4" /> Geri
         </button>
+        <Button
+          size="sm"
+          variant="outline"
+          className={student.status === "ACTIVE" ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "text-green-600 border-green-200 hover:bg-green-50"}
+          onClick={handleToggleStatus}
+          disabled={togglingStatus}
+        >
+          {student.status === "ACTIVE" ? "Pasife Al" : "Aktif Et"}
+        </Button>
         <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDeleteConfirm(true)}>
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
         </Button>

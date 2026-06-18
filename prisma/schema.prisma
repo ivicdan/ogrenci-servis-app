@@ -28,6 +28,13 @@ enum StudentStatus {
 enum StudyTime {
   MORNING
   AFTERNOON
+  MORNING_NOON
+  MORNING_EVENING
+  NOON_EVENING
+  ONE_WAY_MORNING_TO_SCHOOL
+  ONE_WAY_NOON_TO_SCHOOL
+  ONE_WAY_NOON_RETURN
+  ONE_WAY_EVENING_RETURN
 }
 
 enum RouteType {
@@ -132,11 +139,12 @@ model Student {
   studyTime   StudyTime
   routeOrder  Int           @default(0)
   status      StudentStatus @default(ACTIVE)
-  parent      Parent?
-  attendances Attendance[]
-  payments    Payment[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  parent         Parent?
+  attendances    Attendance[]
+  absenceReports AbsenceReport[]
+  payments       Payment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model Parent {
@@ -168,8 +176,21 @@ model Parent {
   plainPassword      String?
   sessionToken       String?
   notifications      Notification[]
+  absenceReports     AbsenceReport[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
+}
+
+model AbsenceReport {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  parentId  String
+  parent    Parent   @relation(fields: [parentId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  type      String
+  createdAt DateTime @default(now())
 }
 
 model Route {
@@ -180,9 +201,10 @@ model Route {
   driver    Driver    @relation(fields: [driverId], references: [id])
   firmId    String
   firm      Firm      @relation(fields: [firmId], references: [id])
-  students  Student[]
-  stops     Stop[]
-  createdAt DateTime  @default(now())
+  students      Student[]
+  stops         Stop[]
+  tripStartedAt DateTime?
+  createdAt     DateTime  @default(now())
 }
 
 model Stop {
