@@ -126,8 +126,12 @@ model Student {
   firm        Firm          @relation(fields: [firmId], references: [id])
   driverId    String?
   driver      Driver?       @relation(fields: [driverId], references: [id])
-  routeId     String?
-  route       Route?        @relation(fields: [routeId], references: [id])
+  routeId           String?
+  route             Route?        @relation("PickupRoute", fields: [routeId], references: [id])
+  routeOrder        Int           @default(0)
+  dropoffRouteId    String?
+  dropoffRoute      Route?        @relation("DropoffRoute", fields: [dropoffRouteId], references: [id])
+  dropoffRouteOrder Int           @default(0)
   firstName   String
   lastName    String
   birthDate   DateTime
@@ -137,7 +141,6 @@ model Student {
   teacher     String?
   phone       String?
   studyTime   StudyTime
-  routeOrder  Int           @default(0)
   status      StudentStatus @default(ACTIVE)
   parent         Parent?
   attendances    Attendance[]
@@ -201,10 +204,11 @@ model Route {
   driver    Driver    @relation(fields: [driverId], references: [id])
   firmId    String
   firm      Firm      @relation(fields: [firmId], references: [id])
-  students      Student[]
-  stops         Stop[]
-  tripStartedAt DateTime?
-  createdAt     DateTime  @default(now())
+  students         Student[] @relation("PickupRoute")
+  dropoffStudents  Student[] @relation("DropoffRoute")
+  stops            Stop[]
+  tripStartedAt    DateTime?
+  createdAt        DateTime  @default(now())
 }
 
 model Stop {

@@ -34,17 +34,19 @@ export async function DELETE(
   const route = await prisma.route.findFirst({ where: { id, driverId: user.id } });
   if (!route) return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
 
-  // Seferi iptal et ve bugünkü yoklama kayıtlarını sil
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
+  const isDropoff = route.type.includes("DROPOFF");
+
+  // Delete today's attendance records for route students
   await prisma.attendance.deleteMany({
     where: {
       driverId: user.id,
       date: { gte: todayStart, lt: todayEnd },
-      student: { routeId: id },
+      student: isDropoff ? { dropoffRouteId: id } : { routeId: id },
     },
   });
 

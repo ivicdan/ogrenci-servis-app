@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
+const studentIncludes = {
+  parent: {
+    select: {
+      firstName: true,
+      lastName: true,
+      phone: true,
+      spouseFirstName: true,
+      spouseLastName: true,
+      spousePhone: true,
+      pickupLat: true,
+      pickupLng: true,
+    },
+  },
+  attendances: true,
+  absenceReports: true,
+} as const;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,47 +32,43 @@ export async function GET(
   const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(today); todayEnd.setHours(23, 59, 59, 999);
 
-  const route = await prisma.route.findFirst({
+  const studentWhere = { status: "ACTIVE" as const };
+  const attendancesWhere = { where: { date: { gte: todayStart, lt: todayEnd } }, orderBy: { createdAt: "desc" as const } };
+  const absenceWhere = { where: { startDate: { lte: todayEnd }, endDate: { gte: todayStart } } };
+
+  const routeRaw = await prisma.route.findFirst({
     where: { id, driverId: user.id },
     include: {
       students: {
-        where: { status: "ACTIVE" },
+        where: studentWhere,
         orderBy: { routeOrder: "asc" },
         include: {
-          parent: {
-            select: {
-              firstName: true,
-              lastName: true,
-              phone: true,
-              spouseFirstName: true,
-              spouseLastName: true,
-              spousePhone: true,
-              pickupLat: true,
-              pickupLng: true,
-            },
-          },
-          attendances: {
-            where: {
-              date: { gte: todayStart, lt: todayEnd },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          absenceReports: {
-            where: {
-              startDate: { lte: todayEnd },
-              endDate: { gte: todayStart },
-            },
-          },
+          parent: { select: studentIncludes.parent.select },
+          attendances: attendancesWhere,
+          absenceReports: absenceWhere,
+        },
+      },
+      dropoffStudents: {
+        where: studentWhere,
+        orderBy: { dropoffRouteOrder: "asc" },
+        include: {
+          parent: { select: studentIncludes.parent.select },
+          attendances: attendancesWhere,
+          absenceReports: absenceWhere,
         },
       },
     },
   });
 
-  if (!route) {
+  if (!routeRaw) {
     return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
   }
 
-  return NextResponse.json(route);
+  const isDropoff = routeRaw.type.includes("DROPOFF");
+  const { students: pickupStudents, dropoffStudents, ...rest } = routeRaw;
+  const students = isDropoff ? dropoffStudents : pickupStudents;
+
+  return NextResponse.json({ ...rest, students });
 }
 
 export async function PUT(
@@ -71,18 +84,32 @@ export async function PUT(
   const route = await prisma.route.findFirst({ where: { id, driverId: user.id } });
   if (!route) return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
 
-  // Şu an bu güzergahta olan öğrencileri kaldır
-  await prisma.student.updateMany({
-    where: { routeId: id, driverId: user.id },
-    data: { routeId: null, routeOrder: 0 },
-  });
+  const isDropoff = route.type.includes("DROPOFF");
 
-  // Seçilen öğrencileri güzergaha sırasıyla ekle
-  for (const s of students) {
+  if (isDropoff) {
+    // Clear current dropoff route students
     await prisma.student.updateMany({
-      where: { id: s.id, driverId: user.id, status: "ACTIVE" },
-      data: { routeId: id, routeOrder: s.order },
+      where: { dropoffRouteId: id, driverId: user.id },
+      data: { dropoffRouteId: null, dropoffRouteOrder: 0 },
     });
+    for (const s of students) {
+      await prisma.student.updateMany({
+        where: { id: s.id, driverId: user.id, status: "ACTIVE" },
+        data: { dropoffRouteId: id, dropoffRouteOrder: s.order },
+      });
+    }
+  } else {
+    // Clear current pickup route students
+    await prisma.student.updateMany({
+      where: { routeId: id, driverId: user.id },
+      data: { routeId: null, routeOrder: 0 },
+    });
+    for (const s of students) {
+      await prisma.student.updateMany({
+        where: { id: s.id, driverId: user.id, status: "ACTIVE" },
+        data: { routeId: id, routeOrder: s.order },
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });
