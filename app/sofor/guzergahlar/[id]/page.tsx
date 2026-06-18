@@ -1,12 +1,16 @@
 "use client";
-import { useEffect, useState, use } from "react";
-import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw } from "lucide-react";
+import { useEffect, useState, use, useRef } from "react";
+import dynamic from "next/dynamic";
+import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw, Map } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { CopyPhone } from "@/components/copy-phone";
+import type { StudentMapPoint } from "@/components/route-map";
+
+const RouteMap = dynamic(() => import("@/components/route-map"), { ssr: false });
 
 interface Attendance {
   status: string;
@@ -29,6 +33,8 @@ interface Student {
     spouseFirstName: string | null;
     spouseLastName: string | null;
     spousePhone: string | null;
+    pickupLat: number | null;
+    pickupLng: number | null;
   } | null;
   attendances: Attendance[];
 }
@@ -50,8 +56,36 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
   const [orderedStudents, setOrderedStudents] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [driverLat, setDriverLat] = useState<number | null>(null);
+  const [driverLng, setDriverLng] = useState<number | null>(null);
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { loadRoute(); }, [id]);
+
+  // Şoför konumu takibi — her 15 saniyede konum gönder + ETA kontrol
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    function sendLocation() {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setDriverLat(lat);
+        setDriverLng(lng);
+        apiFetch("/api/sofor/konum", {
+          method: "POST",
+          body: JSON.stringify({ lat, lng }),
+        });
+      });
+    }
+
+    sendLocation();
+    locationIntervalRef.current = setInterval(sendLocation, 15000);
+    return () => {
+      if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
+    };
+  }, []);
 
   async function loadRoute() {
     const [{ data: r }, { data: s }] = await Promise.all([
@@ -168,6 +202,14 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
         <div className="flex items-center gap-2">
           <Button
             size="sm"
+            variant="outline"
+            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+            onClick={() => setMapOpen((v) => !v)}
+          >
+            <Map className="w-4 h-4 mr-1" /> Harita
+          </Button>
+          <Button
+            size="sm"
             className="bg-green-600 hover:bg-green-700"
             onClick={completeTrip}
             disabled={completing}
@@ -244,6 +286,50 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Güzergah Haritası */}
+      {mapOpen && (() => {
+        const mapPoints: StudentMapPoint[] = route.students
+          .filter((s) => s.parent?.pickupLat && s.parent?.pickupLng)
+          .map((s) => {
+            const pickupAtt = s.attendances.find((a) => a.type === "PICKUP");
+            const dropoffAtt = s.attendances.find((a) => a.type === "DROPOFF");
+            let status: StudentMapPoint["status"] = "pending";
+            if (dropoffAtt?.status === "PICKED_UP") status = "dropped_off";
+            else if (pickupAtt?.status === "PICKED_UP") status = "picked_up";
+            else if (pickupAtt?.status === "ABSENT") status = "absent";
+            else if (pickupAtt?.status === "NOTIFIED_ABSENT") status = "notified_absent";
+            return {
+              id: s.id,
+              firstName: s.firstName,
+              lastName: s.lastName,
+              lat: s.parent!.pickupLat!,
+              lng: s.parent!.pickupLng!,
+              status,
+              routeOrder: s.routeOrder,
+            };
+          });
+
+        if (mapPoints.length === 0) {
+          return (
+            <div className="bg-gray-50 rounded-2xl p-4 mb-4 text-center text-sm text-gray-400">
+              Haritada gösterilecek konum girilmemiş.
+            </div>
+          );
+        }
+
+        return (
+          <div className="mb-4 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+            <div className="bg-white px-4 py-2 flex items-center gap-2 text-xs text-gray-500 border-b border-gray-100">
+              <span className="w-3 h-3 rounded-full bg-gray-400 inline-block" /> Bekliyor
+              <span className="w-3 h-3 rounded-full bg-green-600 inline-block ml-2" /> Alındı
+              <span className="w-3 h-3 rounded-full bg-blue-600 inline-block ml-2" /> İndirildi
+              <span className="w-3 h-3 rounded-full bg-orange-500 inline-block ml-2" /> Gelmeyecek
+            </div>
+            <RouteMap students={mapPoints} driverLat={driverLat} driverLng={driverLng} height={300} />
+          </div>
+        );
+      })()}
 
       {/* Öğrenci Kartları */}
       <div className="space-y-3">

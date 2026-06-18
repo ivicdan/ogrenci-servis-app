@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy } from "lucide-react";
 import { CopyPhone } from "@/components/copy-phone";
@@ -9,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import type { StudentMapPoint } from "@/components/route-map";
+
+const RouteMap = dynamic(() => import("@/components/route-map"), { ssr: false });
 
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah",
@@ -58,6 +62,8 @@ interface StudentDetail {
     spouseRelation: string | null;
     plainPassword: string | null;
     paymentDay: number | null;
+    pickupLat: number | null;
+    pickupLng: number | null;
   } | null;
   payments: {
     id: string;
@@ -264,6 +270,28 @@ export default function OgrenciDetay() {
               </div>
             )}
           </div>
+
+          {student.parent.pickupLat && student.parent.pickupLng && (() => {
+            const mapPoints: StudentMapPoint[] = [{
+              id: student.id,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              lat: student.parent!.pickupLat!,
+              lng: student.parent!.pickupLng!,
+              status: "pending",
+              routeOrder: 1,
+            }];
+            return (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h3 className="font-semibold text-gray-900 text-xs mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> Servis Alınma Konumu
+                </h3>
+                <div className="rounded-xl overflow-hidden">
+                  <RouteMap students={mapPoints} height={200} />
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="mt-4 pt-4 border-t border-gray-100">
             <h3 className="font-semibold text-gray-900 text-xs mb-2 flex items-center gap-1.5">

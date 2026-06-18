@@ -26,6 +26,8 @@ export async function GET(
               spouseFirstName: true,
               spouseLastName: true,
               spousePhone: true,
+              pickupLat: true,
+              pickupLng: true,
             },
           },
           attendances: {

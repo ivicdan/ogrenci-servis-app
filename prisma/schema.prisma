@@ -94,10 +94,13 @@ model Driver {
   password      String
   firstName     String
   lastName      String
-  plateNumber   String?
-  assistantName String?
-  plainPassword String?
-  sessionToken  String?
+  plateNumber         String?
+  assistantName       String?
+  plainPassword       String?
+  sessionToken        String?
+  currentLat          Float?
+  currentLng          Float?
+  locationUpdatedAt   DateTime?
   firmId        String
   firm          Firm           @relation(fields: [firmId], references: [id])
   status        DriverStatus   @default(ACTIVE)
@@ -151,6 +154,8 @@ model Parent {
   otpExpiry        DateTime?
   profession       String?
   address          String
+  pickupLat          Float?
+  pickupLng          Float?
   spouseFirstName    String?
   spouseLastName     String?
   spousePhone        String?

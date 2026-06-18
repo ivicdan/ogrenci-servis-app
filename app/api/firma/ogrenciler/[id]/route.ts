@@ -35,6 +35,8 @@ export async function GET(
           spouseRelation: true,
           plainPassword: true,
           paymentDay: true,
+          pickupLat: true,
+          pickupLng: true,
         },
       },
       payments: {

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+
+const MapPicker = dynamic(() => import("@/components/map-picker"), { ssr: false });
 
 function validatePhone(phone: string) {
   const digits = phone.replace(/[\s\-]/g, "");
@@ -21,6 +24,8 @@ const studyTimeLabel: Record<string, string> = {
 export default function VeliProfil() {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({});
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -49,6 +54,8 @@ export default function VeliProfil() {
           extraPhone: data.extraPhone ?? "",
           extraPhoneRelation: data.extraPhoneRelation ?? "",
         });
+        if (data.pickupLat) setPickupLat(data.pickupLat);
+        if (data.pickupLng) setPickupLng(data.pickupLng);
       }
     });
   }, []);
@@ -66,7 +73,7 @@ export default function VeliProfil() {
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
       method: "PUT",
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, pickupLat, pickupLng }),
     });
     setLoading(false);
     if (error) return toast.error(error);
@@ -185,6 +192,19 @@ export default function VeliProfil() {
             <Label>İkamet Adresi</Label>
             <Input value={f("address")} onChange={(e) => s("address", e.target.value)} className="mt-1" required />
           </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
+          <div>
+            <h2 className="font-semibold text-gray-900 text-sm">SERVİS ALINMA KONUMU</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Servisin sizi alacağı konumu haritada işaretleyin. Şoför bu konumu görecek.</p>
+          </div>
+          <MapPicker lat={pickupLat} lng={pickupLng} onChange={(lat, lng) => { setPickupLat(lat); setPickupLng(lng); }} />
+          {pickupLat && pickupLng && (
+            <button type="button" onClick={() => { setPickupLat(null); setPickupLng(null); }} className="text-xs text-red-400 hover:text-red-600">
+              Konumu Temizle
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
