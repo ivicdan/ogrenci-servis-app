@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, School, RotateCcw } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -114,6 +114,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     setCompleting(false);
     if (error) return toast.error(error);
     toast.success(`Sefer tamamlandı! ${data?.notified ?? 0} veliye bildirim gönderildi.`);
+    loadRoute();
   }
 
   async function resetAttendance(studentId: string, type: "PICKUP" | "DROPOFF") {
@@ -362,19 +363,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   </>
                 )}
 
-                {/* Okula İndirildi butonu — sadece "Alındı" işaretlendikten sonra */}
-                {isPickedUp && !isDroppedOff && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 min-w-[120px]"
-                    onClick={() => markAttendance(student.id, "PICKED_UP", "DROPOFF")}
-                    disabled={!!processingKey}
-                  >
-                    <School className="w-3.5 h-3.5 mr-1" />
-                    {processing === student.id + "DROPOFF" ? "..." : "Okula İndirildi"}
-                  </Button>
-                )}
               </div>
             </div>
           );

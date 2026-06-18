@@ -26,7 +26,7 @@ export async function POST(
           attendances: {
             where: {
               type: "PICKUP",
-              status: "NOTIFIED_ABSENT",
+              status: "PICKED_UP",
               date: { gte: todayStart, lt: todayEnd },
             },
           },
@@ -37,22 +37,50 @@ export async function POST(
 
   if (!route) return NextResponse.json({ error: "Güzergah bulunamadı." }, { status: 404 });
 
-  // Bugün "okula gitmeyecek" veya "servisle gitmeyecek" bildirimi yapan velileri çıkar
-  const eligibleStudents = route.students.filter((s) => s.attendances.length === 0);
+  // Only students who were actually picked up today
+  const pickedUpStudents = route.students.filter((s) => s.attendances.length > 0);
 
-  const parentIds = eligibleStudents
-    .map((s) => s.parent?.id)
-    .filter(Boolean) as string[];
-
-  if (parentIds.length > 0) {
-    await prisma.notification.createMany({
-      data: parentIds.map((parentId) => ({
-        parentId,
-        title: "Sefer Tamamlandı",
-        body: `${route.name} seferi tamamlandı. Çocuğunuz okula güvenli bir şekilde ulaşmıştır.`,
-      })),
+  if (pickedUpStudents.length > 0) {
+    // Check which students already have a DROPOFF record today (avoid duplicates)
+    const existingDropoffs = await prisma.attendance.findMany({
+      where: {
+        studentId: { in: pickedUpStudents.map((s) => s.id) },
+        type: "DROPOFF",
+        date: { gte: todayStart, lt: todayEnd },
+      },
+      select: { studentId: true },
     });
+    const alreadyDroppedOff = new Set(existingDropoffs.map((a) => a.studentId));
+
+    // Create DROPOFF PICKED_UP for students not yet dropped off
+    const toDropOff = pickedUpStudents.filter((s) => !alreadyDroppedOff.has(s.id));
+    if (toDropOff.length > 0) {
+      await prisma.attendance.createMany({
+        data: toDropOff.map((s) => ({
+          studentId: s.id,
+          driverId: user.id,
+          date: new Date(),
+          type: "DROPOFF",
+          status: "PICKED_UP",
+        })),
+      });
+    }
+
+    // Notify parents of all picked-up students
+    const parentIds = pickedUpStudents
+      .map((s) => s.parent?.id)
+      .filter(Boolean) as string[];
+
+    if (parentIds.length > 0) {
+      await prisma.notification.createMany({
+        data: parentIds.map((parentId) => ({
+          parentId,
+          title: "Sefer Tamamlandı",
+          body: "Çocuğunuz okula güvenli bir şekilde ulaşmıştır.",
+        })),
+      });
+    }
   }
 
-  return NextResponse.json({ ok: true, notified: parentIds.length });
+  return NextResponse.json({ ok: true, notified: pickedUpStudents.length });
 }
