@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userType =
-    user.type === "FIRM" ? "FIRM" : user.type === "DRIVER" ? "DRIVER" : "PARENT";
+    user.userType === "FIRM" ? "FIRM" : user.userType === "DRIVER" ? "DRIVER" : "PARENT";
 
   await prisma.pushSubscription.upsert({
     where: { endpoint },
