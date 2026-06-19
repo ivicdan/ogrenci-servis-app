@@ -282,3 +282,13 @@ model MessageRecipient {
   userType  String
   read      Boolean @default(false)
 }
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userType  String
+  userId    String
+  createdAt DateTime @default(now())
+}

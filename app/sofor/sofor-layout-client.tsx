@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LayoutDashboard, Bus, Bell, LogOut, GraduationCap } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
+import { subscribeToPush } from "@/app/pwa-register";
 
 const navItems = [
   { href: "/sofor/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
@@ -27,6 +28,7 @@ export default function SoforLayoutClient({ children }: { children: React.ReactN
       router.replace("/sofor/giris");
     } else if (!isPublic) {
       requestNotificationPermission();
+      subscribeToPush();
     }
   }, [isPublic, router]);
 
@@ -41,6 +43,10 @@ export default function SoforLayoutClient({ children }: { children: React.ReactN
           }
           prevUnread.current = data.count;
           setUnread(data.count);
+          if ("setAppBadge" in navigator) {
+            if (data.count > 0) navigator.setAppBadge(data.count).catch(() => {});
+            else navigator.clearAppBadge().catch(() => {});
+          }
         }
       });
     };

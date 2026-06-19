@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
+import { subscribeToPush } from "@/app/pwa-register";
 
 const navItems = [
   { href: "/firma/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
         router.replace("/firma/giris");
       } else {
         requestNotificationPermission();
+        subscribeToPush();
       }
     }
   }, [isPublic, router]);
@@ -46,6 +48,10 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
           }
           prevUnread.current = data.count;
           setUnread(data.count);
+          if ("setAppBadge" in navigator) {
+            if (data.count > 0) navigator.setAppBadge(data.count).catch(() => {});
+            else navigator.clearAppBadge().catch(() => {});
+          }
         }
       });
     };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LayoutDashboard, User, CreditCard, Bell, LogOut, AlertTriangle } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
+import { subscribeToPush } from "@/app/pwa-register";
 
 const navItems = [
   { href: "/veli/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
@@ -28,6 +29,7 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
       router.replace("/veli/giris");
     } else if (!isPublic) {
       requestNotificationPermission();
+      subscribeToPush();
     }
   }, [isPublic, router]);
 
@@ -42,6 +44,10 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
           }
           prevUnread.current = data.count;
           setUnread(data.count);
+          if ("setAppBadge" in navigator) {
+            if (data.count > 0) navigator.setAppBadge(data.count).catch(() => {});
+            else navigator.clearAppBadge().catch(() => {});
+          }
         }
       });
     };

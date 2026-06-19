@@ -19,14 +19,24 @@ export async function createNotification(opts: NotifyOptions) {
     },
   });
 
-  // Socket.io emit — server-side emitter sunucu üzerinden çağrılır
-  // emit() fonksiyonu /app/api/socket/route.ts'den export edilir
   try {
     const { emitNotification } = await import("./socket-emitter");
     emitNotification(notif);
-  } catch {
-    // Socket sunucusu hazır değilse sessizce geç
-  }
+  } catch {}
+
+  // Web Push — arka planda çalışan cihazlara bildirim gönder
+  try {
+    const { sendPushToUser } = await import("./push");
+    if (opts.firmId) {
+      await sendPushToUser("FIRM", opts.firmId, { title: opts.title, body: opts.body });
+    }
+    if (opts.driverId) {
+      await sendPushToUser("DRIVER", opts.driverId, { title: opts.title, body: opts.body });
+    }
+    if (opts.parentId) {
+      await sendPushToUser("PARENT", opts.parentId, { title: opts.title, body: opts.body });
+    }
+  } catch {}
 
   return notif;
 }
