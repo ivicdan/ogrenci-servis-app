@@ -72,7 +72,6 @@ function FirmaGirisInner() {
               required
               className="mt-1"
             />
-            <p className="text-xs text-gray-400 mt-1">11 haneli, sadece rakam.</p>
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>
