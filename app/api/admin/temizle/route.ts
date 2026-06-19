@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Deletion order matters due to FK constraints
-    const [att, abs, notif, msgRecip, msg, pay, parent, stop, route, driver] = await Promise.all([
+    await Promise.all([
       prisma.attendance.deleteMany({}),
       (prisma as any).absenceReport.deleteMany({}),
       prisma.notification.deleteMany({ where: { OR: [{ driverId: { not: null } }, { parentId: { not: null } }] } }),
