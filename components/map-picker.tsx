@@ -1,6 +1,6 @@
 "use client";
-import { useCallback } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -15,11 +15,18 @@ const pinIcon = L.icon({
 });
 
 function ClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
+  useMapEvents({ click(e) { onMapClick(e.latlng.lat, e.latlng.lng); } });
+  return null;
+}
+
+function FlyTo({ target }: { target: { lat: number; lng: number; key: number } | null }) {
+  const map = useMap();
+  const lastKey = useRef(-1);
+  useEffect(() => {
+    if (!target || target.key === lastKey.current) return;
+    lastKey.current = target.key;
+    map.flyTo([target.lat, target.lng], 17, { animate: true, duration: 1 });
+  }, [target, map]);
   return null;
 }
 
@@ -31,11 +38,16 @@ interface MapPickerProps {
 
 export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
   const center: [number, number] = lat && lng ? [lat, lng] : [41.0082, 28.9784];
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number; key: number } | null>(null);
 
   const handleLocate = useCallback(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => onChange(pos.coords.latitude, pos.coords.longitude),
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        onChange(latitude, longitude);
+        setFlyTarget((prev) => ({ lat: latitude, lng: longitude, key: (prev?.key ?? 0) + 1 }));
+      },
       () => {}
     );
   }, [onChange]);
@@ -54,16 +66,19 @@ export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
       </div>
       <MapContainer
         center={center}
-        zoom={lat && lng ? 15 : 7}
+        zoom={lat && lng ? 15 : 10}
         className="w-full rounded-xl border border-gray-200"
         style={{ height: 260 }}
         scrollWheelZoom={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+          maxZoom={20}
         />
         <ClickHandler onMapClick={onChange} />
+        <FlyTo target={flyTarget} />
         {lat && lng && (
           <Marker
             position={[lat, lng]}

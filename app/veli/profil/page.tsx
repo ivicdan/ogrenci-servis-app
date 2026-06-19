@@ -85,7 +85,7 @@ export default function VeliProfil() {
     setLoading(false);
     if (error) return toast.error(error);
     toast.success("Bilgiler güncellendi!");
-    router.push("/veli/dashboard");
+    setTimeout(() => router.push("/veli/dashboard"), 800);
   }
 
   const f = (k: string) => form[k] ?? "";
