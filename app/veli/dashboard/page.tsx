@@ -123,7 +123,7 @@ export default function VeliDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link href="/veli/profil"
+        <Link href="/veli/profil?edit=true"
           className="bg-white rounded-2xl p-4 text-center shadow-sm border border-gray-100 hover:border-purple-200 transition-all">
           <p className="text-sm font-semibold text-gray-900">Bilgileri Düzenle</p>
           <p className="text-xs text-gray-500 mt-0.5">Profil & Öğrenci</p>
