@@ -1,0 +1,20 @@
+{
+  "name": "Öğrenci Servis — Veli Paneli",
+  "short_name": "Veli Paneli",
+  "description": "Öğrenci servis takip uygulaması — Veli",
+  "start_url": "/veli/giris",
+  "scope": "/veli/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F3FF",
+  "theme_color": "#7C3AED",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/icons/icon-veli.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

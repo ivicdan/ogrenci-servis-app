@@ -90,9 +90,6 @@ function SoforGirisInner() {
         <div className="mt-4 p-3 bg-green-50 rounded-xl border border-green-100 text-center">
           <p className="text-xs text-green-700 font-medium">Servis firmanızdan Şoför ID ve şifrenizi alın.</p>
         </div>
-        <div className="mt-3 text-center">
-          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← Ana sayfaya dön</Link>
-        </div>
       </div>
 
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>

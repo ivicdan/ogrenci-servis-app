@@ -101,9 +101,6 @@ function FirmaGirisInner() {
           Hesabınız yok mu?{" "}
           <Link href="/firma/kayit" className="text-blue-600 font-medium">Kayıt Ol</Link>
         </div>
-        <div className="mt-3 text-center">
-          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← Ana sayfaya dön</Link>
-        </div>
       </div>
 
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>

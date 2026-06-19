@@ -1,0 +1,20 @@
+{
+  "name": "Öğrenci Servis — Firma Paneli",
+  "short_name": "Firma Paneli",
+  "description": "Servis firması yönetim paneli",
+  "start_url": "/firma/giris",
+  "scope": "/firma/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EFF6FF",
+  "theme_color": "#2563EB",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/icons/icon-firma.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
