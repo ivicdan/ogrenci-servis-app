@@ -6,9 +6,14 @@ export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ count: 0 });
 
-  const count = await prisma.notification.count({
-    where: { parentId: user.id, read: false },
-  });
+  const [count, latest] = await Promise.all([
+    prisma.notification.count({ where: { parentId: user.id, read: false } }),
+    prisma.notification.findFirst({
+      where: { parentId: user.id, read: false },
+      orderBy: { createdAt: "desc" },
+      select: { title: true, body: true },
+    }),
+  ]);
 
-  return NextResponse.json({ count });
+  return NextResponse.json({ count, latestTitle: latest?.title ?? "", latestBody: latest?.body ?? "" });
 }

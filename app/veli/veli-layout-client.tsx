@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, User, CreditCard, Bell, LogOut, AlertTriangle } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
-import { playNotificationSound, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
+import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 
 const navItems = [
   { href: "/veli/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
@@ -34,11 +34,11 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
   useEffect(() => {
     if (isPublic) return;
     const fetchCount = () => {
-      apiFetch<{ count: number }>("/api/veli/bildirimler/count").then(({ data }) => {
+      apiFetch<{ count: number; latestTitle: string; latestBody: string }>("/api/veli/bildirimler/count").then(({ data }) => {
         if (data) {
           if (prevUnread.current !== -1 && data.count > prevUnread.current) {
-            playNotificationSound();
-            showPushNotification("Yeni Bildirim", `${data.count - prevUnread.current} yeni bildiriminiz var.`);
+            playNotificationSound(soundTypeFromTitle(data.latestTitle, data.latestBody));
+            showPushNotification(data.latestTitle || "Yeni Bildirim", data.latestBody || `${data.count - prevUnread.current} yeni bildiriminiz var.`);
           }
           prevUnread.current = data.count;
           setUnread(data.count);
