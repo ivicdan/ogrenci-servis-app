@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { apiFetch, setToken, setUserType } from "@/lib/api-client";
+import { apiFetch, setToken, setUserType, getToken, getUserType } from "@/lib/api-client";
 
 const STORAGE_KEY = "firma_remember";
 
@@ -22,6 +22,10 @@ function FirmaGirisInner() {
   const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => {
+    if (!searchParams.get("reason") && getToken() && getUserType() === "FIRM") {
+      router.replace("/firma/dashboard");
+      return;
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) { setForm(JSON.parse(saved)); setRemember(true); }
@@ -29,7 +33,7 @@ function FirmaGirisInner() {
     if (searchParams.get("reason") === "session") {
       toast.error("Başka bir cihazdan giriş yapıldı. Oturumunuz kapatıldı.", { duration: 6000 });
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
