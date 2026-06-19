@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CreditCard, Calendar, Copy } from "lucide-react";
+import { CreditCard, Calendar, Copy, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export default function VeliOdeme() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentDay, setPaymentDay] = useState<number | null>(null);
   const [newDay, setNewDay] = useState("");
+  const [editingDay, setEditingDay] = useState(false);
   const [iban, setIban] = useState<string | null>(null);
   const [monthlyFee, setMonthlyFee] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
@@ -56,13 +57,15 @@ export default function VeliOdeme() {
   async function handleSetDay(e: React.FormEvent) {
     e.preventDefault();
     const day = parseInt(newDay);
-    if (!day || day < 1 || day > 28) return toast.error("1-28 arası bir gün girin.");
+    if (!day || day < 1 || day > 31) return toast.error("1-31 arası bir gün girin.");
     const { error } = await apiFetch("/api/veli/odeme-gunu", {
       method: "PUT",
       body: JSON.stringify({ paymentDay: day }),
     });
     if (error) return toast.error(error);
     setPaymentDay(day);
+    setNewDay("");
+    setEditingDay(false);
     toast.success(`Ödeme günü ayın ${day}'i olarak ayarlandı.`);
   }
 
@@ -121,18 +124,31 @@ export default function VeliOdeme() {
           <Calendar className="w-4 h-4 text-purple-500" />
           <p className="font-semibold text-gray-900 text-sm">Ödeme Günüm</p>
         </div>
-        {paymentDay ? (
-          <p className="text-gray-600 text-sm mb-3">
-            Her ayın <strong className="text-purple-700">{paymentDay}.</strong> günü ödeme yapıyorsunuz.
-          </p>
+        {paymentDay && !editingDay ? (
+          <div className="flex items-center justify-between">
+            <p className="text-gray-700 text-sm">
+              Her ayın <strong className="text-purple-700">{paymentDay}.</strong> günü
+            </p>
+            <button
+              onClick={() => { setNewDay(String(paymentDay)); setEditingDay(true); }}
+              className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Değiştir
+            </button>
+          </div>
         ) : (
-          <p className="text-gray-500 text-sm mb-3">Ödeme gününüz belirlenmemiş.</p>
+          <form onSubmit={handleSetDay} className="flex gap-2">
+            <Input
+              type="number" min={1} max={31} placeholder="Gün (1-31)"
+              value={newDay} onChange={(e) => setNewDay(e.target.value)}
+              className="flex-1" autoFocus={editingDay}
+            />
+            <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700">Ayarla</Button>
+            {editingDay && (
+              <Button type="button" size="sm" variant="outline" onClick={() => setEditingDay(false)}>İptal</Button>
+            )}
+          </form>
         )}
-        <form onSubmit={handleSetDay} className="flex gap-2">
-          <Input type="number" min={1} max={28} placeholder="Gün (1-28)"
-            value={newDay} onChange={(e) => setNewDay(e.target.value)} className="flex-1" />
-          <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700">Ayarla</Button>
-        </form>
       </div>
 
       <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => setOpen(true)}>

@@ -22,10 +22,10 @@ export async function sendPushToUser(
 
   const icon =
     userType === "FIRM"
-      ? "/icons/icon-firma.svg"
+      ? "/icons/icon-firma.png"
       : userType === "DRIVER"
-      ? "/icons/icon-sofor.svg"
-      : "/icons/icon-veli.svg";
+      ? "/icons/icon-sofor.png"
+      : "/icons/icon-veli.png";
 
   await Promise.allSettled(
     subscriptions.map(async (sub) => {

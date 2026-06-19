@@ -20,16 +20,16 @@ self.addEventListener('fetch', (event) => {
 
 // Sunucudan gelen push bildirimi
 self.addEventListener('push', (event) => {
-  let data = { title: 'Öğrenci Servis', body: '', icon: '/icons/icon-firma.svg', url: '/' };
+  let data = { title: 'Öğrenci Servis', body: 'Yeni bildirim', icon: '/icons/icon-firma.png', badge: '/icons/icon-firma.png', url: '/' };
   try { data = { ...data, ...event.data?.json() }; } catch {}
 
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: data.icon,
-      badge: data.icon,
-      tag: 'servis-notification',
-      renotify: true,
+      badge: data.badge,
+      tag: 'servis-' + Date.now(),
+      renotify: false,
       data: { url: data.url },
       vibrate: [200, 100, 200],
     })
