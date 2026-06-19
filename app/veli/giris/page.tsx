@@ -60,9 +60,17 @@ function VeliGirisInner() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="studentTcId">Öğrenci TC Kimlik No</Label>
-            <Input id="studentTcId" placeholder="Öğrenciye ait TC kimlik numarası"
-              value={form.studentTcId} onChange={(e) => setForm({ ...form, studentTcId: e.target.value })}
-              required className="mt-1" />
+            <Input
+              id="studentTcId"
+              placeholder="11 haneli TC kimlik numarası"
+              value={form.studentTcId}
+              onChange={(e) => setForm({ ...form, studentTcId: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+              inputMode="numeric"
+              maxLength={11}
+              required
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, sadece rakam.</p>
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>

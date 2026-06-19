@@ -44,6 +44,7 @@ interface StudentDetail {
   phone: string | null;
   studyTime: string;
   status: string;
+  monthlyFee: string | null;
   driver: { id: string; firstName: string; lastName: string; driverCode: string; plateNumber: string | null } | null;
   parent: {
     id: string;
@@ -83,9 +84,12 @@ export default function OgrenciDetay() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [pasifConfirm, setPasifConfirm] = useState(false);
   const [resettingPass, setResettingPass] = useState(false);
   const [newPass, setNewPass] = useState<string | null>(null);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [monthlyFee, setMonthlyFee] = useState("");
+  const [savingFee, setSavingFee] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -95,6 +99,7 @@ export default function OgrenciDetay() {
       if (s) {
         setStudent(s);
         setSelectedDriver(s.driver?.id ?? "");
+        setMonthlyFee(s.monthlyFee ? String(Number(s.monthlyFee)) : "");
       }
       if (d) setDrivers(d);
     }).finally(() => setLoading(false));
@@ -154,6 +159,17 @@ export default function OgrenciDetay() {
     }
   }
 
+  async function handleSaveFee() {
+    setSavingFee(true);
+    const { error } = await apiFetch(`/api/firma/ogrenciler/${params.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ monthlyFee: monthlyFee === "" ? null : monthlyFee }),
+    });
+    setSavingFee(false);
+    if (error) return toast.error(error);
+    toast.success("Aylık ücret güncellendi!");
+  }
+
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
   if (!student) return <div className="text-center py-12 text-gray-400">Öğrenci bulunamadı.</div>;
 
@@ -167,7 +183,7 @@ export default function OgrenciDetay() {
           size="sm"
           variant="outline"
           className={student.status === "ACTIVE" ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "text-green-600 border-green-200 hover:bg-green-50"}
-          onClick={handleToggleStatus}
+          onClick={student.status === "ACTIVE" ? () => setPasifConfirm(true) : handleToggleStatus}
           disabled={togglingStatus}
         >
           {student.status === "ACTIVE" ? "Pasife Al" : "Aktif Et"}
@@ -176,6 +192,19 @@ export default function OgrenciDetay() {
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
         </Button>
       </div>
+
+      <Dialog open={pasifConfirm} onOpenChange={setPasifConfirm}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader><DialogTitle>Öğrenciyi Pasife Al</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-600">
+            <strong>{student.firstName} {student.lastName}</strong> adlı öğrenci pasife alınacak. Emin misiniz?
+          </p>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setPasifConfirm(false)}>İptal</Button>
+            <Button className="flex-1 bg-orange-600 hover:bg-orange-700" onClick={() => { setPasifConfirm(false); handleToggleStatus(); }}>Evet, Pasife Al</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
         <DialogContent className="max-w-sm mx-auto">
@@ -250,6 +279,32 @@ export default function OgrenciDetay() {
           disabled={saving}
         >
           {saving ? "Kaydediliyor..." : "Şoförü Ata"}
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+        <h2 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
+          <CreditCard className="w-4 h-4" /> Aylık Servis Ücreti
+        </h2>
+        <div className="flex gap-2 items-center">
+          <input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="0.00"
+            value={monthlyFee}
+            onChange={(e) => setMonthlyFee(e.target.value)}
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
+          <span className="text-sm text-gray-500 flex-shrink-0">TL</span>
+        </div>
+        <Button
+          size="sm"
+          className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+          onClick={handleSaveFee}
+          disabled={savingFee}
+        >
+          {savingFee ? "Kaydediliyor..." : "Ücreti Kaydet"}
         </Button>
       </div>
 

@@ -61,10 +61,18 @@ function FirmaGirisInner() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="taxOrTcId">Vergi No / TC Kimlik No</Label>
-            <Input id="taxOrTcId" placeholder="Vergi veya TC numaranız"
-              value={form.taxOrTcId} onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value })}
-              required className="mt-1" />
+            <Label htmlFor="taxOrTcId">TC Kimlik No</Label>
+            <Input
+              id="taxOrTcId"
+              placeholder="11 haneli TC kimlik numaranız"
+              value={form.taxOrTcId}
+              onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+              inputMode="numeric"
+              maxLength={11}
+              required
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-400 mt-1">11 haneli, sadece rakam.</p>
           </div>
           <div>
             <Label htmlFor="password">Şifre</Label>

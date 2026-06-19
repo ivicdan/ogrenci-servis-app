@@ -32,6 +32,7 @@ export default function VeliOdeme() {
   const [paymentDay, setPaymentDay] = useState<number | null>(null);
   const [newDay, setNewDay] = useState("");
   const [iban, setIban] = useState<string | null>(null);
+  const [monthlyFee, setMonthlyFee] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [payForm, setPayForm] = useState({ amount: "", paidDate: new Date().toISOString().slice(0, 10), method: "BANK_TRANSFER" });
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,7 @@ export default function VeliOdeme() {
       if (data) {
         if (data.paymentDay) setPaymentDay(data.paymentDay);
         if (data.student?.firm?.iban) setIban(data.student.firm.iban);
+        if (data.student?.monthlyFee) setMonthlyFee(Number(data.student.monthlyFee));
       }
     });
   }, []);
@@ -82,6 +84,20 @@ export default function VeliOdeme() {
   return (
     <div className="max-w-md mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Ödemelerim</h1>
+
+      <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
+        <p className="text-xs font-semibold text-purple-700 mb-1 flex items-center gap-1">
+          <CreditCard className="w-3.5 h-3.5" /> AYLIK SERVİS ÜCRETİ
+        </p>
+        {monthlyFee != null && monthlyFee > 0 ? (
+          <p className="text-2xl font-bold text-purple-800">
+            {monthlyFee.toLocaleString("tr-TR")} <span className="text-base font-semibold text-purple-500">TL / ay</span>
+          </p>
+        ) : (
+          <p className="text-sm text-gray-400 italic">Servis firması tarafından henüz belirlenmedi.</p>
+        )}
+        <p className="text-xs text-purple-500 mt-1">Bu miktar firma tarafından belirlenir.</p>
+      </div>
 
       <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
         <p className="text-xs font-semibold text-blue-700 mb-1">ÖDEME YAPILACAK IBAN</p>
