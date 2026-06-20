@@ -1,0 +1,46 @@
+<svg viewBox="0 0 200 200" width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Arka plan -->
+  <rect width="200" height="200" rx="44" fill="#1D4ED8"/>
+
+  <!-- Otobüs çatısı (yuvarlak üst) -->
+  <path d="M52 100 Q52 58 100 58 Q148 58 148 100" fill="#F97316"/>
+
+  <!-- Otobüs gövdesi -->
+  <rect x="42" y="97" width="116" height="66" rx="7" fill="#F97316"/>
+
+  <!-- Ön cam (windshield) -->
+  <rect x="58" y="64" width="84" height="50" rx="9" fill="#BFDBFE"/>
+  <!-- Cam parlaması -->
+  <rect x="64" y="70" width="28" height="16" rx="5" fill="white" opacity="0.25"/>
+
+  <!-- Kalp (cam içinde) -->
+  <path d="M100 106
+           C100 106 80 92 80 81
+           C80 74 86 71 91 72
+           C95 73 100 80 100 80
+           C100 80 105 73 109 72
+           C114 71 120 74 120 81
+           C120 92 100 106 100 106Z"
+        fill="#EF4444"/>
+  <!-- Kalp parlama -->
+  <ellipse cx="90" cy="77" rx="4" ry="3" fill="white" opacity="0.35" transform="rotate(-30 90 77)"/>
+
+  <!-- Sol far -->
+  <circle cx="60" cy="143" r="15" fill="#FEF08A"/>
+  <circle cx="60" cy="143" r="10" fill="#FDE047"/>
+  <circle cx="55" cy="138" r="3.5" fill="white" opacity="0.55"/>
+
+  <!-- Sağ far -->
+  <circle cx="140" cy="143" r="15" fill="#FEF08A"/>
+  <circle cx="140" cy="143" r="10" fill="#FDE047"/>
+  <circle cx="135" cy="138" r="3.5" fill="white" opacity="0.55"/>
+
+  <!-- Izgara (merkez) -->
+  <rect x="82" y="130" width="36" height="22" rx="5" fill="#EA580C"/>
+  <line x1="89" y1="136" x2="111" y2="136" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+  <line x1="89" y1="142" x2="111" y2="142" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+  <line x1="89" y1="148" x2="111" y2="148" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Ön tampon -->
+  <rect x="36" y="156" width="128" height="11" rx="6" fill="#C2410C"/>
+</svg>
