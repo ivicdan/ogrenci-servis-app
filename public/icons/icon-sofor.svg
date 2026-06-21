@@ -1,14 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#16A34A"/>
-  <rect x="96" y="170" width="320" height="195" rx="24" fill="white"/>
-  <rect x="116" y="190" width="86" height="68" rx="8" fill="#BBF7D0"/>
-  <rect x="218" y="190" width="86" height="68" rx="8" fill="#BBF7D0"/>
-  <rect x="96" y="285" width="320" height="80" rx="0 0 24px 24px" fill="#86EFAC"/>
-  <rect x="96" y="310" width="320" height="55" rx="0 0 24 24" fill="#15803D"/>
-  <circle cx="152" cy="390" r="42" fill="#1E293B"/>
-  <circle cx="152" cy="390" r="18" fill="#BBF7D0"/>
-  <circle cx="360" cy="390" r="42" fill="#1E293B"/>
-  <circle cx="360" cy="390" r="18" fill="#BBF7D0"/>
-  <rect x="380" y="220" width="32" height="60" rx="6" fill="#F0FDF4"/>
-  <rect x="372" y="130" width="48" height="96" rx="4" fill="#FCD34D"/>
+<svg viewBox="0 0 500 500" width="500" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path id="topArc" d="M 55,250 A 195,195 0 0,0 445,250"/>
+    <clipPath id="circleClip">
+      <circle cx="250" cy="250" r="243"/>
+    </clipPath>
+  </defs>
+
+  <!-- Arka plan dairesi -->
+  <circle cx="250" cy="250" r="250" fill="#00C4E8"/>
+
+  <g clip-path="url(#circleClip)">
+
+    <!-- SOL HAREKET YAYLARI -->
+    <path d="M 150,178 C 90,178 90,322 150,322"
+          fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 163,198 C 118,198 118,302 163,302"
+          fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- SAG HAREKET YAYLARI -->
+    <path d="M 350,178 C 410,178 410,322 350,322"
+          fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 337,198 C 382,198 382,302 337,302"
+          fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- SOL EL -->
+    <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="92" y="278" width="74" height="110" rx="15" stroke-width="6"/>
+      <rect x="93" y="208" width="15" height="75" rx="7.5" stroke-width="5"/>
+      <rect x="111" y="196" width="15" height="85" rx="7.5" stroke-width="5"/>
+      <rect x="129" y="189" width="15" height="92" rx="7.5" stroke-width="5"/>
+      <rect x="147" y="198" width="15" height="83" rx="7.5" stroke-width="5"/>
+      <rect x="160" y="305" width="22" height="60" rx="11" stroke-width="5"/>
+    </g>
+
+    <!-- SAG EL -->
+    <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="334" y="278" width="74" height="110" rx="15" stroke-width="6"/>
+      <rect x="392" y="208" width="15" height="75" rx="7.5" stroke-width="5"/>
+      <rect x="374" y="196" width="15" height="85" rx="7.5" stroke-width="5"/>
+      <rect x="356" y="189" width="15" height="92" rx="7.5" stroke-width="5"/>
+      <rect x="338" y="198" width="15" height="83" rx="7.5" stroke-width="5"/>
+      <rect x="318" y="305" width="22" height="60" rx="11" stroke-width="5"/>
+    </g>
+
+    <!-- OTOBUS -->
+    <rect x="182" y="155" width="136" height="262" rx="16"
+          fill="none" stroke="white" stroke-width="7"/>
+    <rect x="192" y="161" width="116" height="108" rx="11"
+          fill="none" stroke="white" stroke-width="6"/>
+    <line x1="182" y1="281" x2="318" y2="281" stroke="white" stroke-width="6"/>
+    <rect x="160" y="260" width="21" height="33" rx="5"
+          fill="none" stroke="white" stroke-width="5"/>
+    <line x1="181" y1="270" x2="192" y2="270" stroke="white" stroke-width="4"/>
+    <rect x="319" y="260" width="21" height="33" rx="5"
+          fill="none" stroke="white" stroke-width="5"/>
+    <line x1="319" y1="270" x2="308" y2="270" stroke="white" stroke-width="4"/>
+    <rect x="191" y="336" width="40" height="16" rx="8" fill="white"/>
+    <rect x="237" y="339" width="9" height="10" rx="4" fill="white"/>
+    <rect x="247" y="339" width="9" height="10" rx="4" fill="white"/>
+    <rect x="257" y="339" width="9" height="10" rx="4" fill="white"/>
+    <rect x="269" y="336" width="40" height="16" rx="8" fill="white"/>
+    <rect x="186" y="358" width="128" height="13" rx="6"
+          fill="none" stroke="white" stroke-width="4"/>
+    <rect x="191" y="400" width="36" height="20" rx="8"
+          fill="none" stroke="white" stroke-width="5"/>
+    <rect x="273" y="400" width="36" height="20" rx="8"
+          fill="none" stroke="white" stroke-width="5"/>
+
+    <!-- ON CAM YAZISI -->
+    <text x="250" y="220"
+          fill="white"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="13"
+          font-weight="700"
+          text-anchor="middle"
+          letter-spacing="2">OKUL TASITI</text>
+
+    <!-- EGIRISELI METIN -->
+    <text fill="white"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="20"
+          letter-spacing="0.8">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">ogrenciservisi.online</textPath>
+    </text>
+
+    <!-- ALT METIN -->
+    <text x="250" y="452"
+          fill="white"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="21"
+          font-weight="800"
+          text-anchor="middle"
+          letter-spacing="5">GUVENLE</text>
+    <text x="250" y="477"
+          fill="white"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="21"
+          font-weight="800"
+          text-anchor="middle"
+          letter-spacing="5">TASIR</text>
+
+  </g>
 </svg>

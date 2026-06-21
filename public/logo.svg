@@ -11,72 +11,104 @@
 
   <g clip-path="url(#circleClip)">
 
-    <!-- SOL HAREKET YAYLARI -->
+    <!-- ── SOL HAREKET YAYLARı ── -->
     <path d="M 150,178 C 90,178 90,322 150,322"
           fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
     <path d="M 163,198 C 118,198 118,302 163,302"
           fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
 
-    <!-- SAG HAREKET YAYLARI -->
+    <!-- ── SAĞ HAREKET YAYLARı ── -->
     <path d="M 350,178 C 410,178 410,322 350,322"
           fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
     <path d="M 337,198 C 382,198 382,302 337,302"
           fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
 
-    <!-- SOL EL -->
+    <!-- ── SOL EL ── -->
     <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Avuç içi -->
       <rect x="92" y="278" width="74" height="110" rx="15" stroke-width="6"/>
+      <!-- Serçe parmak -->
       <rect x="93" y="208" width="15" height="75" rx="7.5" stroke-width="5"/>
+      <!-- Yüzük parmağı -->
       <rect x="111" y="196" width="15" height="85" rx="7.5" stroke-width="5"/>
+      <!-- Orta parmak (en uzun) -->
       <rect x="129" y="189" width="15" height="92" rx="7.5" stroke-width="5"/>
+      <!-- İşaret parmağı -->
       <rect x="147" y="198" width="15" height="83" rx="7.5" stroke-width="5"/>
+      <!-- Başparmak -->
       <rect x="160" y="305" width="22" height="60" rx="11" stroke-width="5"/>
     </g>
 
-    <!-- SAG EL -->
+    <!-- ── SAĞ EL ── -->
     <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Avuç içi -->
       <rect x="334" y="278" width="74" height="110" rx="15" stroke-width="6"/>
+      <!-- Serçe parmak -->
       <rect x="392" y="208" width="15" height="75" rx="7.5" stroke-width="5"/>
+      <!-- Yüzük parmağı -->
       <rect x="374" y="196" width="15" height="85" rx="7.5" stroke-width="5"/>
+      <!-- Orta parmak -->
       <rect x="356" y="189" width="15" height="92" rx="7.5" stroke-width="5"/>
+      <!-- İşaret parmağı -->
       <rect x="338" y="198" width="15" height="83" rx="7.5" stroke-width="5"/>
+      <!-- Başparmak -->
       <rect x="318" y="305" width="22" height="60" rx="11" stroke-width="5"/>
     </g>
 
-    <!-- OTOBUS -->
+    <!-- ── OTOBÜS ── -->
+    <!-- Dış gövde (tüm otobüs) -->
     <rect x="182" y="155" width="136" height="262" rx="16"
           fill="none" stroke="white" stroke-width="7"/>
+
+    <!-- Ön cam çerçevesi (iç) -->
     <rect x="192" y="161" width="116" height="108" rx="11"
           fill="none" stroke="white" stroke-width="6"/>
+
+    <!-- Kaput çizgisi (ön cam altı) -->
     <line x1="182" y1="281" x2="318" y2="281" stroke="white" stroke-width="6"/>
+
+    <!-- Sol dikiz aynası -->
     <rect x="160" y="260" width="21" height="33" rx="5"
           fill="none" stroke="white" stroke-width="5"/>
+    <!-- Sol ayna bağlantısı -->
     <line x1="181" y1="270" x2="192" y2="270" stroke="white" stroke-width="4"/>
+
+    <!-- Sağ dikiz aynası -->
     <rect x="319" y="260" width="21" height="33" rx="5"
           fill="none" stroke="white" stroke-width="5"/>
+    <!-- Sağ ayna bağlantısı -->
     <line x1="319" y1="270" x2="308" y2="270" stroke="white" stroke-width="4"/>
+
+    <!-- Sol far -->
     <rect x="191" y="336" width="40" height="16" rx="8" fill="white"/>
+    <!-- Merkez küçük farlar -->
     <rect x="237" y="339" width="9" height="10" rx="4" fill="white"/>
     <rect x="247" y="339" width="9" height="10" rx="4" fill="white"/>
     <rect x="257" y="339" width="9" height="10" rx="4" fill="white"/>
+    <!-- Sağ far -->
     <rect x="269" y="336" width="40" height="16" rx="8" fill="white"/>
+
+    <!-- Ön tampon / alt panel -->
     <rect x="186" y="358" width="128" height="13" rx="6"
           fill="none" stroke="white" stroke-width="4"/>
+
+    <!-- Sol tekerlek -->
     <rect x="191" y="400" width="36" height="20" rx="8"
           fill="none" stroke="white" stroke-width="5"/>
+    <!-- Sağ tekerlek -->
     <rect x="273" y="400" width="36" height="20" rx="8"
           fill="none" stroke="white" stroke-width="5"/>
 
-    <!-- ON CAM YAZISI -->
+    <!-- Ön cam yazısı: OKUL TAŞITI -->
     <text x="250" y="220"
           fill="white"
           font-family="Arial, Helvetica, sans-serif"
           font-size="13"
           font-weight="700"
           text-anchor="middle"
-          letter-spacing="2">OKUL TASITI</text>
+          letter-spacing="2">OKUL TAŞITI</text>
 
-    <!-- EGIRISELI METIN -->
+    <!-- ── EĞRİSEL METİN: ogrenciservisi.online ── -->
     <text fill="white"
           font-family="Arial, Helvetica, sans-serif"
           font-size="20"
@@ -84,21 +116,21 @@
       <textPath href="#topArc" startOffset="50%" text-anchor="middle">ogrenciservisi.online</textPath>
     </text>
 
-    <!-- ALT METIN -->
+    <!-- ── ALT METİN: GÜVENLE TAŞIR ── -->
     <text x="250" y="452"
           fill="white"
           font-family="Arial, Helvetica, sans-serif"
           font-size="21"
           font-weight="800"
           text-anchor="middle"
-          letter-spacing="5">GUVENLE</text>
+          letter-spacing="5">GÜVENLE</text>
     <text x="250" y="477"
           fill="white"
           font-family="Arial, Helvetica, sans-serif"
           font-size="21"
           font-weight="800"
           text-anchor="middle"
-          letter-spacing="5">TASIR</text>
+          letter-spacing="5">TAŞIR</text>
 
   </g>
 </svg>
