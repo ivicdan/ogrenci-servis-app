@@ -2,7 +2,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Bus, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,9 +54,7 @@ function SoforGirisInner() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6">
         <div className="flex justify-center mb-6">
-          <div className="bg-green-100 rounded-2xl p-3">
-            <Bus className="w-8 h-8 text-green-600" />
-          </div>
+          <img src="/logo.svg" alt="ogrenciservisi.online" className="w-32 h-auto" />
         </div>
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">Şoför Girişi</h1>
         <p className="text-center text-gray-500 text-sm mb-6">Firma tarafından verilen bilgilerle giriş yapın</p>

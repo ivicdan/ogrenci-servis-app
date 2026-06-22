@@ -2,7 +2,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Building2, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,9 +56,7 @@ function FirmaGirisInner() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6">
         <div className="flex justify-center mb-6">
-          <div className="bg-blue-100 rounded-2xl p-3">
-            <Building2 className="w-8 h-8 text-blue-600" />
-          </div>
+          <img src="/logo.svg" alt="ogrenciservisi.online" className="w-32 h-auto" />
         </div>
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">Firma Girişi</h1>
         <p className="text-center text-gray-500 text-sm mb-6">Hesabınıza giriş yapın</p>

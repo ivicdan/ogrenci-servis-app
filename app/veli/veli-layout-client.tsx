@@ -77,7 +77,7 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
       <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 shadow-sm">
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <img src="/logo-icon.svg" alt="Logo" className="w-9 h-9 rounded-full" />
+            <img src="/icons/icon-veli.svg" alt="Logo" className="w-9 h-9 rounded-full" />
             <span className="font-bold text-gray-900 text-sm leading-tight">Veli<br/>Paneli</span>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
       <div className="flex-1 flex flex-col">
         <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo-icon.svg" alt="Logo" className="w-7 h-7 rounded-full" />
+            <img src="/icons/icon-veli.svg" alt="Logo" className="w-7 h-7 rounded-full" />
             <span className="font-bold text-gray-900 text-sm">Veli Paneli</span>
           </div>
           <button onClick={() => { clearToken(); router.push("/veli/giris"); }} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors">
