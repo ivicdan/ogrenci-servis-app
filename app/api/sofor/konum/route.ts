@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { emitDriverLocation } from "@/lib/socket-emitter";
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371000;
@@ -21,10 +22,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Geçersiz konum." }, { status: 400 });
   }
 
+  const updatedAt = new Date();
+
   // Driver konumunu güncelle
   await prisma.driver.update({
     where: { id: user.id },
-    data: { currentLat: lat, currentLng: lng, locationUpdatedAt: new Date() },
+    data: { currentLat: lat, currentLng: lng, locationUpdatedAt: updatedAt },
   });
 
   // ETA bildirimi için: bu şoförün aktif güzergahlarındaki öğrencileri kontrol et
@@ -58,34 +61,44 @@ export async function POST(req: NextRequest) {
   });
 
   const etaNotifs: string[] = [];
+  const parentIds: string[] = [];
 
   for (const student of students) {
     const p = student.parent;
     if (!p?.pickupLat || !p?.pickupLng) continue;
 
+    parentIds.push(p.id);
+
     const dist = haversineMeters(lat, lng, p.pickupLat, p.pickupLng);
-    if (dist > ETA_THRESHOLD_M) continue;
 
-    // Bugün zaten "Servis Yaklaşıyor" bildirimi gittiyse tekrar gönderme
-    const alreadySent = await prisma.notification.findFirst({
-      where: {
-        parentId: p.id,
-        title: "Servis Yaklaşıyor",
-        createdAt: { gte: todayStart, lt: todayEnd },
-      },
-      select: { id: true },
-    });
-    if (alreadySent) continue;
+    if (dist <= ETA_THRESHOLD_M) {
+      // Bugün zaten "Servis Yaklaşıyor" bildirimi gittiyse tekrar gönderme
+      const alreadySent = await prisma.notification.findFirst({
+        where: {
+          parentId: p.id,
+          title: "Servis Yaklaşıyor",
+          createdAt: { gte: todayStart, lt: todayEnd },
+        },
+        select: { id: true },
+      });
 
-    const etaMin = Math.max(1, Math.round((dist / 1000 / 30) * 60));
-    await prisma.notification.create({
-      data: {
-        parentId: p.id,
-        title: "Servis Yaklaşıyor",
-        body: `Servisiniz yaklaşık ${etaMin} dakika içinde kapınızda olacak.`,
-      },
-    });
-    etaNotifs.push(student.id);
+      if (!alreadySent) {
+        const etaMin = Math.max(1, Math.round((dist / 1000 / 30) * 60));
+        await prisma.notification.create({
+          data: {
+            parentId: p.id,
+            title: "Servis Yaklaşıyor",
+            body: `Servisiniz yaklaşık ${etaMin} dakika içinde kapınızda olacak.`,
+          },
+        });
+        etaNotifs.push(student.id);
+      }
+    }
+  }
+
+  // Socket üzerinden anlık konum yay
+  if (parentIds.length > 0) {
+    emitDriverLocation({ parentIds, lat, lng, updatedAt: updatedAt.toISOString() });
   }
 
   return NextResponse.json({ ok: true, etaNotified: etaNotifs.length });

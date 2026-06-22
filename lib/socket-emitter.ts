@@ -59,3 +59,18 @@ export function emitAbsenceNotification(data: {
   if (!io) return;
   io.to(`driver:${data.driverId}`).emit("absence", data);
 }
+
+export function emitDriverLocation(data: {
+  parentIds: string[];
+  lat: number;
+  lng: number;
+  eta?: number | null;
+  updatedAt: string;
+}) {
+  const io = getSocketServer();
+  if (!io) return;
+  const payload = { lat: data.lat, lng: data.lng, eta: data.eta, updatedAt: data.updatedAt };
+  for (const parentId of data.parentIds) {
+    io.to(`parent:${parentId}`).emit("driverLocation", payload);
+  }
+}
