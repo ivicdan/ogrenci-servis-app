@@ -56,6 +56,7 @@ interface TrackingData {
   };
   eta?: number | null;
   distance?: number | null;
+  routeGeometry?: [number, number][] | null;
 }
 
 function routeTypeLabel(type: string) {
@@ -206,6 +207,7 @@ export default function VeliDashboard() {
               driverName={`${tracking!.driver!.firstName} ${tracking!.driver!.lastName}`}
               homeLat={tracking!.pickup?.lat}
               homeLng={tracking!.pickup?.lng}
+              routeGeometry={tracking!.routeGeometry}
               height={260}
             />
           ) : (

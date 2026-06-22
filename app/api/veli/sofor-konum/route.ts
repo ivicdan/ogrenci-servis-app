@@ -12,6 +12,34 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function osrmRoute(lat1: number, lng1: number, lat2: number, lng2: number) {
+  try {
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${lng1},${lat1};${lng2},${lat2}` +
+      `?overview=full&geometries=geojson`;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code !== "Ok" || !data.routes?.[0]) return null;
+    const r = data.routes[0];
+    // GeoJSON coords → [lat, lng] for Leaflet
+    const geometry: [number, number][] = r.geometry.coordinates.map(
+      ([lng, lat]: [number, number]) => [lat, lng]
+    );
+    return {
+      distance: Math.round(r.distance) as number,
+      duration: Math.round(r.duration) as number, // saniye
+      geometry,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
@@ -67,6 +95,7 @@ export async function GET(req: NextRequest) {
 
   let etaMinutes: number | null = null;
   let distanceMeters: number | null = null;
+  let routeGeometry: [number, number][] | null = null;
 
   if (
     driver.currentLat != null &&
@@ -74,15 +103,29 @@ export async function GET(req: NextRequest) {
     parent.pickupLat != null &&
     parent.pickupLng != null
   ) {
-    const dist = haversineMeters(
+    // Yol tabanlı rota: OSRM
+    const osrm = await osrmRoute(
       driver.currentLat,
       driver.currentLng,
       parent.pickupLat,
       parent.pickupLng
     );
-    distanceMeters = Math.round(dist);
-    // Şehir içi ortalama 30 km/h
-    etaMinutes = Math.max(1, Math.round((dist / 1000 / 30) * 60));
+
+    if (osrm) {
+      distanceMeters = osrm.distance;
+      etaMinutes = Math.max(1, Math.round(osrm.duration / 60));
+      routeGeometry = osrm.geometry;
+    } else {
+      // OSRM erişilemez ise Haversine yedek
+      const dist = haversineMeters(
+        driver.currentLat,
+        driver.currentLng,
+        parent.pickupLat,
+        parent.pickupLng
+      );
+      distanceMeters = Math.round(dist);
+      etaMinutes = Math.max(1, Math.round((dist / 1000 / 30) * 60));
+    }
   }
 
   return NextResponse.json({
@@ -107,5 +150,6 @@ export async function GET(req: NextRequest) {
     },
     eta: etaMinutes,
     distance: distanceMeters,
+    routeGeometry,   // Leaflet Polyline için [lat, lng][]
   });
 }

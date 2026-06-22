@@ -21,20 +21,33 @@ const homeIcon = L.divIcon({
 function BoundsFitter({
   driverPos,
   homePos,
+  routeCoords,
 }: {
   driverPos: [number, number];
   homePos: [number, number] | null;
+  routeCoords: [number, number][];
 }) {
   const map = useMap();
   useEffect(() => {
-    if (homePos) {
-      const bounds = L.latLngBounds([driverPos, homePos]);
-      map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 16, duration: 1.2 });
+    // Yol geometrisi varsa tüm koordinatları kapsayan sınır kullan
+    const allPoints = routeCoords.length > 1
+      ? routeCoords
+      : homePos
+        ? [driverPos, homePos]
+        : [driverPos];
+
+    if (allPoints.length === 1) {
+      map.flyTo(allPoints[0], 15, { duration: 1.2 });
     } else {
-      map.flyTo(driverPos, 15, { duration: 1.2 });
+      const bounds = L.latLngBounds(allPoints);
+      map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 16, duration: 1.2 });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [driverPos[0], driverPos[1], homePos?.[0], homePos?.[1]]);
+  }, [
+    driverPos[0], driverPos[1],
+    homePos?.[0], homePos?.[1],
+    routeCoords.length,
+  ]);
   return null;
 }
 
@@ -44,6 +57,8 @@ interface DriverTrackingMapProps {
   driverName: string;
   homeLat?: number | null;
   homeLng?: number | null;
+  /** Yol tabanlı rota noktaları (backend OSRM'den) */
+  routeGeometry?: [number, number][] | null;
   height?: number;
 }
 
@@ -53,17 +68,23 @@ export default function DriverTrackingMap({
   driverName,
   homeLat,
   homeLng,
+  routeGeometry,
   height = 260,
 }: DriverTrackingMapProps) {
   const driverPos: [number, number] = [driverLat, driverLng];
   const homePos: [number, number] | null =
     homeLat != null && homeLng != null ? [homeLat, homeLng] : null;
 
+  const routeCoords: [number, number][] =
+    routeGeometry && routeGeometry.length > 1 ? routeGeometry : [];
+
+  // Yol yoksa düz çizgi yedek
+  const fallbackLine: [number, number][] =
+    routeCoords.length === 0 && homePos ? [driverPos, homePos] : [];
+
   const initialCenter: [number, number] = homePos
     ? [(driverLat + homeLat!) / 2, (driverLng + homeLng!) / 2]
     : driverPos;
-
-  const line: [number, number][] = homePos ? [driverPos, homePos] : [];
 
   return (
     <MapContainer
@@ -78,10 +99,31 @@ export default function DriverTrackingMap({
         maxZoom={20}
       />
 
-      <BoundsFitter driverPos={driverPos} homePos={homePos} />
+      <BoundsFitter
+        driverPos={driverPos}
+        homePos={homePos}
+        routeCoords={routeCoords}
+      />
 
-      {line.length === 2 && (
-        <Polyline positions={line} color="#3b82f6" weight={3} dashArray="8,6" opacity={0.75} />
+      {/* Gerçek yol rotası */}
+      {routeCoords.length > 1 && (
+        <Polyline
+          positions={routeCoords}
+          color="#3b82f6"
+          weight={4}
+          opacity={0.85}
+        />
+      )}
+
+      {/* OSRM yoksa düz çizgi */}
+      {fallbackLine.length === 2 && (
+        <Polyline
+          positions={fallbackLine}
+          color="#94a3b8"
+          weight={3}
+          dashArray="8,6"
+          opacity={0.7}
+        />
       )}
 
       <Marker position={driverPos} icon={busIcon}>
