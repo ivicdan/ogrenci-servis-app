@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { trUpperCase } from "@/lib/utils";
 
 export async function GET(
   req: NextRequest,
@@ -68,7 +69,14 @@ export async function PUT(
 
   const updated = await prisma.driver.update({
     where: { id },
-    data: { firstName, lastName, phone, plateNumber, assistantName, status },
+    data: {
+      firstName: firstName ? trUpperCase(firstName) : firstName,
+      lastName: lastName ? trUpperCase(lastName) : lastName,
+      phone,
+      plateNumber,
+      assistantName: assistantName ? trUpperCase(assistantName) : assistantName,
+      status,
+    },
   });
 
   return NextResponse.json(updated);

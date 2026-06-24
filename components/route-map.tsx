@@ -1,5 +1,6 @@
 "use client";
-import { MapContainer, TileLayer, Marker, Tooltip, Polyline } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Tooltip, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -13,10 +14,21 @@ export interface StudentMapPoint {
   routeOrder: number;
 }
 
+function DriverFollower({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.panTo([lat, lng], { animate: true, duration: 1 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng]);
+  return null;
+}
+
 interface RouteMapProps {
   students: StudentMapPoint[];
   driverLat?: number | null;
   driverLng?: number | null;
+  /** OSRM'den gelen gerçek yol rotası [lat, lng][] */
+  osrmRoute?: [number, number][] | null;
   height?: number;
 }
 
@@ -47,7 +59,7 @@ const driverMarker = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-export default function RouteMap({ students, driverLat, driverLng, height = 280 }: RouteMapProps) {
+export default function RouteMap({ students, driverLat, driverLng, osrmRoute, height = 280 }: RouteMapProps) {
   const valid = students.filter((s) => s.lat && s.lng);
   if (valid.length === 0) return null;
 
@@ -69,8 +81,14 @@ export default function RouteMap({ students, driverLat, driverLng, height = 280 
         maxZoom={20}
       />
 
+      {/* Durak sırası (gri kesik) */}
       {polyline.length > 1 && (
         <Polyline positions={polyline} color="#94a3b8" weight={2} dashArray="6,5" />
+      )}
+
+      {/* OSRM gerçek yol rotası (mavi solid) */}
+      {osrmRoute && osrmRoute.length > 1 && (
+        <Polyline positions={osrmRoute} color="#2563eb" weight={4} opacity={0.85} />
       )}
 
       {valid.map((s) => (
@@ -89,6 +107,11 @@ export default function RouteMap({ students, driverLat, driverLng, height = 280 
         <Marker position={[driverLat, driverLng]} icon={driverMarker}>
           <Tooltip direction="top" opacity={0.95}>Şoför</Tooltip>
         </Marker>
+      )}
+
+      {/* Harita şoförü takip eder */}
+      {driverLat && driverLng && (
+        <DriverFollower lat={driverLat} lng={driverLng} />
       )}
     </MapContainer>
   );

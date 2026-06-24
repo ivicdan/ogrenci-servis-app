@@ -61,8 +61,8 @@ function SoforGirisInner() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="driverCode">Şoför ID</Label>
-            <Input id="driverCode" placeholder="Firma tarafından verilen ID"
+            <Label htmlFor="driverCode">Şoför Giriş Kodu</Label>
+            <Input id="driverCode" placeholder="Firma tarafından verilen giriş kodu"
               value={form.driverCode} onChange={(e) => setForm({ ...form, driverCode: e.target.value })}
               required className="mt-1 font-mono" />
           </div>
@@ -90,7 +90,7 @@ function SoforGirisInner() {
           </Button>
         </form>
         <div className="mt-4 p-3 bg-green-50 rounded-xl border border-green-100 text-center">
-          <p className="text-xs text-green-700 font-medium">Servis firmanızdan Şoför ID ve şifrenizi alın.</p>
+          <p className="text-xs text-green-700 font-medium">Servis firmanızdan Şoför Giriş Kodu ve şifrenizi alın.</p>
         </div>
       </div>
 

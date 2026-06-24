@@ -100,7 +100,7 @@ export default function FirmaSoforler() {
                 <p className="font-semibold text-gray-900">{newDriver.firstName} {newDriver.lastName}</p>
 
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Şoför ID</p>
+                  <p className="text-xs text-gray-500 mb-1">ŞOFÖR GİRİŞ KODU</p>
                   <div className="flex items-center justify-center gap-2">
                     <span className="font-mono font-bold text-xl text-green-700 bg-green-100 px-3 py-1 rounded-xl">
                       {newDriver.driverCode}

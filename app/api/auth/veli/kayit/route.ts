@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
     if (!firmCode || !studentTcId || !phone || !password) {
       return NextResponse.json(
-        { error: "Firma ID, öğrenci TC, telefon ve şifre zorunludur." },
+        { error: "Firma Kodu, öğrenci TC, telefon ve şifre zorunludur." },
         { status: 400 }
       );
     }
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const firm = await prisma.firm.findUnique({ where: { firmCode } });
     if (!firm) {
       return NextResponse.json(
-        { error: "Geçersiz Firma ID. Lütfen servis firmanızdan doğru ID'yi alın." },
+        { error: "Geçersiz Firma Kodu. Lütfen servis firmanızdan doğru kodu alın." },
         { status: 404 }
       );
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { trUpperCase } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
@@ -35,8 +36,8 @@ export async function PUT(req: NextRequest) {
   const firm = await prisma.firm.update({
     where: { id: user.id },
     data: {
-      name,
-      address,
+      name: name ? trUpperCase(name) : name,
+      address: address ? trUpperCase(address) : address,
       iban,
       documents,
       status: name && address ? "ACTIVE" : undefined,

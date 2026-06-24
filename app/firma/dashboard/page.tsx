@@ -44,7 +44,7 @@ export default function FirmaDashboard() {
         </h1>
         {firm && (
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-gray-500">Firma ID:</span>
+            <span className="text-sm text-gray-500">FİRMA KODU:</span>
             <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg text-sm">
               {firm.firmCode}
             </span>

@@ -132,7 +132,7 @@ export default function Home() {
               >
                 Şoför Girişi <ChevronRight className="w-4 h-4" />
               </Link>
-              <p className="mt-2 text-center text-xs text-gray-400">Şoför ID firmanız tarafından verilir.</p>
+              <p className="mt-2 text-center text-xs text-gray-400">Şoför Giriş Kodu firmanız tarafından verilir.</p>
             </div>
 
             {/* Veli */}

@@ -54,13 +54,13 @@ export default function VeliKayit() {
           <img src="/logo.svg" alt="ogrenciservisi.online" className="w-32 h-auto" />
         </div>
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">Veli Kaydı</h1>
-        <p className="text-center text-gray-500 text-sm mb-5">Firma ID'nizi hazır bulundurun</p>
+        <p className="text-center text-gray-500 text-sm mb-5">Firma Kodunuzu hazır bulundurun</p>
 
         <form onSubmit={handleRegister} className="space-y-3">
           <div>
-            <Label>Firma ID <span className="text-red-500">*</span></Label>
+            <Label>Firma Kodu <span className="text-red-500">*</span></Label>
             <Input
-              placeholder="Servis firmanızın ID'si (zorunlu)"
+              placeholder="Servis firmanızın kodu (zorunlu)"
               value={form.firmCode}
               onChange={(e) => setForm({ ...form, firmCode: e.target.value })}
               required className="mt-1 font-mono"

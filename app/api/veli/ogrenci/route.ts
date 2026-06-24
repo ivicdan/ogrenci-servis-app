@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { trUpperCase } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
@@ -78,21 +79,23 @@ export async function PUT(req: NextRequest) {
 
   if (!parent) return NextResponse.json({ error: "Veli bulunamadı." }, { status: 404 });
 
+  const u = (s?: string) => (s ? trUpperCase(s) : s);
+
   await Promise.all([
     prisma.parent.update({
       where: { id: user.id },
       data: {
-        firstName,
-        lastName,
+        firstName: u(firstName),
+        lastName: u(lastName),
         ...(phone ? { phone } : {}),
-        profession,
-        address,
+        profession: u(profession),
+        address: u(address),
         pickupLat: typeof pickupLat === "number" ? pickupLat : null,
         pickupLng: typeof pickupLng === "number" ? pickupLng : null,
-        spouseFirstName,
-        spouseLastName,
+        spouseFirstName: u(spouseFirstName),
+        spouseLastName: u(spouseLastName),
         spousePhone,
-        spouseProfession,
+        spouseProfession: u(spouseProfession),
         extraPhone: extraPhone || null,
         extraPhoneRelation: extraPhoneRelation || null,
         parentRelation: parentRelation || null,
@@ -102,12 +105,12 @@ export async function PUT(req: NextRequest) {
     prisma.student.update({
       where: { id: parent.studentId },
       data: {
-        firstName: studentFirstName,
-        lastName: studentLastName,
+        firstName: u(studentFirstName),
+        lastName: u(studentLastName),
         birthDate: studentBirthDate ? new Date(studentBirthDate) : undefined,
-        school: studentSchool,
+        school: u(studentSchool),
         class: studentClass,
-        teacher: studentTeacher,
+        teacher: u(studentTeacher),
         studyTime: studentStudyTime,
         phone: studentPhone || null,
       },

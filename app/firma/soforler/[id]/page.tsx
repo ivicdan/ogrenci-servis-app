@@ -157,7 +157,7 @@ export default function SoforDetay() {
           <div className="bg-green-50 rounded-2xl p-4 space-y-3 text-center">
             <p className="text-sm text-gray-600">{driver.firstName} {driver.lastName} için yeni giriş bilgileri:</p>
             <div>
-              <p className="text-xs text-gray-500 mb-1">Şoför ID</p>
+              <p className="text-xs text-gray-500 mb-1">ŞOFÖR GİRİŞ KODU</p>
               <div className="flex items-center justify-center gap-2">
                 <span className="font-mono font-bold text-lg text-green-700 bg-green-100 px-3 py-1 rounded-xl">{driver.driverCode}</span>
                 <button onClick={() => { navigator.clipboard.writeText(driver.driverCode); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
@@ -221,7 +221,7 @@ export default function SoforDetay() {
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Giriş Bilgileri</p>
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xs text-gray-500">Şoför ID</p>
+              <p className="text-xs text-gray-500">ŞOFÖR GİRİŞ KODU</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-1 rounded-lg text-sm">{driver.driverCode}</span>
                 <button onClick={() => { navigator.clipboard.writeText(driver.driverCode); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">

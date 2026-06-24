@@ -59,9 +59,9 @@ export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
         <button
           type="button"
           onClick={handleLocate}
-          className="text-xs text-purple-600 font-medium hover:underline"
+          className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold uppercase tracking-wide px-3 py-1.5 rounded-lg shadow-sm transition-colors"
         >
-          📍 Konumumu Bul
+          📍 KONUMUMU BUL
         </button>
       </div>
       <MapContainer

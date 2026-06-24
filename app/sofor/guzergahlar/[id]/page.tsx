@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, CheckCircle, XCircle, ChevronUp, ChevronDown, UserPlus, CheckCheck, RotateCcw, Map, Play, Undo2 } from "lucide-react";
 import Link from "next/link";
@@ -74,25 +74,112 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
   const [mapOpen, setMapOpen] = useState(false);
   const [driverLat, setDriverLat] = useState<number | null>(null);
   const [driverLng, setDriverLng] = useState<number | null>(null);
+  const [osrmRoute, setOsrmRoute] = useState<[number, number][] | null>(null);
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const routeRef = useRef<Route | null>(null);
+  const osrmRouteRef = useRef<[number, number][] | null>(null);
+  const rerouting = useRef(false);
+  const deviationToastRef = useRef(false);
 
   useEffect(() => { loadRoute(); }, [id]);
 
+  // routeRef'i güncel tut
+  useEffect(() => { routeRef.current = route; }, [route]);
+
+  const fetchOsrmToStudent = useCallback(async (
+    fromLat: number, fromLng: number,
+    toLat: number, toLng: number
+  ): Promise<[number, number][] | null> => {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`,
+        { signal: ctrl.signal }
+      );
+      clearTimeout(t);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.code !== "Ok" || !data.routes?.[0]) return null;
+      return data.routes[0].geometry.coordinates.map(
+        ([lng, lat]: [number, number]) => [lat, lng] as [number, number]
+      );
+    } catch { return null; }
+  }, []);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
+
+    function minDistToRoute(lat: number, lng: number, coords: [number, number][]): number {
+      let min = Infinity;
+      const R = 6371000;
+      for (const [clat, clng] of coords) {
+        const dLat = (clat - lat) * Math.PI / 180;
+        const dLng = (clng - lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat*Math.PI/180)*Math.cos(clat*Math.PI/180)*Math.sin(dLng/2)**2;
+        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        if (d < min) min = d;
+      }
+      return min;
+    }
+
+    async function handleLocation(lat: number, lng: number) {
+      setDriverLat(lat);
+      setDriverLng(lng);
+      apiFetch("/api/sofor/konum", { method: "POST", body: JSON.stringify({ lat, lng }) });
+
+      const cur = routeRef.current;
+      if (!cur || rerouting.current) return;
+
+      const isPickup = cur.type.includes("PICKUP");
+      const attType = isPickup ? "PICKUP" : "DROPOFF";
+
+      // Sıradaki bekleyen öğrenciyi bul
+      const nextStudent = [...cur.students]
+        .sort((a, b) => (isPickup ? a.routeOrder - b.routeOrder : (a as unknown as {dropoffRouteOrder: number}).dropoffRouteOrder - (b as unknown as {dropoffRouteOrder: number}).dropoffRouteOrder))
+        .find(s => {
+          const att = s.attendances.find(a => a.type === attType);
+          return (!att || att.status === "PENDING") && s.parent?.pickupLat && s.parent?.pickupLng;
+        });
+
+      if (!nextStudent?.parent?.pickupLat || !nextStudent?.parent?.pickupLng) return;
+
+      const currentOsrm = osrmRouteRef.current;
+      const THRESHOLD = 200; // metre
+
+      let needsReroute = !currentOsrm || currentOsrm.length === 0;
+      if (!needsReroute && currentOsrm) {
+        const dist = minDistToRoute(lat, lng, currentOsrm);
+        if (dist > THRESHOLD) {
+          needsReroute = true;
+          if (!deviationToastRef.current) {
+            toast.info("Güzergahtan çıkıldı — alternatif rota hesaplanıyor", { duration: 2500 });
+            deviationToastRef.current = true;
+            setTimeout(() => { deviationToastRef.current = false; }, 60000);
+          }
+        }
+      }
+
+      if (needsReroute) {
+        rerouting.current = true;
+        const coords = await fetchOsrmToStudent(lat, lng, nextStudent.parent.pickupLat, nextStudent.parent.pickupLng);
+        rerouting.current = false;
+        if (coords) {
+          osrmRouteRef.current = coords;
+          setOsrmRoute(coords);
+        }
+      }
+    }
+
     function sendLocation() {
       navigator.geolocation.getCurrentPosition((pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setDriverLat(lat);
-        setDriverLng(lng);
-        apiFetch("/api/sofor/konum", { method: "POST", body: JSON.stringify({ lat, lng }) });
+        handleLocation(pos.coords.latitude, pos.coords.longitude);
       });
     }
     sendLocation();
     locationIntervalRef.current = setInterval(sendLocation, 15000);
     return () => { if (locationIntervalRef.current) clearInterval(locationIntervalRef.current); };
-  }, []);
+  }, [fetchOsrmToStudent]);
 
   async function loadRoute() {
     const [{ data: r }, { data: s }] = await Promise.all([
@@ -145,7 +232,6 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     setStarting(false);
     if (error) return toast.error(error);
     toast.success("Sefer başlatıldı!");
-    setMapOpen(true);
     loadRoute();
   }
 
@@ -362,7 +448,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
               {!isDropoffRoute && <><span className="w-3 h-3 rounded-full bg-blue-600 inline-block ml-1" /> İndirildi</>}
               <span className="w-3 h-3 rounded-full bg-orange-500 inline-block ml-1" /> Gelmeyecek
             </div>
-            <RouteMap students={mapPoints} driverLat={driverLat} driverLng={driverLng} height={300} />
+            <RouteMap students={mapPoints} driverLat={driverLat} driverLng={driverLng} osrmRoute={osrmRoute} height={300} />
           </div>
         );
       })()}

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { generateUniqueDriverCode } from "@/lib/id-generator";
+import { trUpperCase } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
@@ -73,12 +74,12 @@ export async function POST(req: NextRequest) {
   const driver = await prisma.driver.create({
     data: {
       driverCode,
-      firstName,
-      lastName,
+      firstName: trUpperCase(firstName),
+      lastName: trUpperCase(lastName),
       phone,
       tcId,
       plateNumber,
-      assistantName,
+      assistantName: assistantName ? trUpperCase(assistantName) : assistantName,
       firmId: user.id,
       password: hashedPassword,
       plainPassword,

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     if (!driverCode || !password) {
       return NextResponse.json(
-        { error: "Şoför ID ve şifre zorunludur." },
+        { error: "Şoför Giriş Kodu ve şifre zorunludur." },
         { status: 400 }
       );
     }
