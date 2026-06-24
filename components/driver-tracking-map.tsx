@@ -92,11 +92,12 @@ export default function DriverTrackingMap({
       zoom={13}
       style={{ height }}
       scrollWheelZoom={false}
-      attributionControl={false}
+      attributionControl={true}
     >
       <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-        maxZoom={20}
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
 
       <BoundsFitter
