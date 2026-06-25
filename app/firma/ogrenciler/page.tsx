@@ -7,14 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
+import * as XLSX from "xlsx";
 
-function downloadCSV(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
-  const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const csv = [headers, ...rows].map(r => r.map(esc).join(",")).join("\r\n");
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+function downloadExcel(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
+  const data = [headers, ...rows.map(r => r.map(v => v ?? ""))];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = headers.map((h, i) => ({
+    wch: Math.min(Math.max(h.length, ...rows.map(r => String(r[i] ?? "").length)) + 2, 45),
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Öğrenciler");
+  XLSX.writeFile(wb, filename);
 }
 
 interface Student {
@@ -69,7 +72,7 @@ export default function FirmaOgrenciler() {
                 s.parent?.phone ?? "", s.parent?.address ?? "",
                 s.status === "ACTIVE" ? "Aktif" : "Pasif",
               ]);
-              downloadCSV(`ogrenciler_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+              downloadExcel(`ogrenciler_${new Date().toISOString().slice(0,10)}.xlsx`, headers, rows);
             }}
           >
             <FileDown className="w-3.5 h-3.5 mr-1" /> Excel

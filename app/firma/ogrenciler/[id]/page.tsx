@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy, FileDown, Pencil } from "lucide-react";
+import * as XLSX from "xlsx";
 import { CopyPhone } from "@/components/copy-phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -178,23 +179,25 @@ export default function OgrenciDetay() {
 
   function exportStudent() {
     if (!student) return;
-    const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [
-      ["Alan", "Değer"],
-      ["Ad", student.firstName], ["Soyad", student.lastName], ["TC", student.tcId],
-      ["Okul", student.school], ["Sınıf", student.class], ["Öğrenim", student.studyTime],
-      ["Şoför", student.driver ? `${student.driver.firstName} ${student.driver.lastName}` : ""],
-      ["Plaka", student.driver?.plateNumber ?? ""],
-      ["Aylık Ücret", student.monthlyFee ? `${Number(student.monthlyFee)} TL` : ""],
-      ["Veli Ad", student.parent?.firstName ?? ""], ["Veli Soyad", student.parent?.lastName ?? ""],
-      ["Veli Tel", student.parent?.phone ?? ""], ["Adres", student.parent?.address ?? ""],
+    const headers = ["Ad", "Soyad", "TC Kimlik", "Okul", "Sınıf", "Öğrenim Saati", "Şoför", "Plaka", "Aylık Ücret (TL)", "Veli Ad", "Veli Soyad", "Veli Tel", "Adres", "Durum"];
+    const row = [
+      student.firstName, student.lastName, student.tcId,
+      student.school, student.class,
+      studyTimeLabel[student.studyTime] ?? student.studyTime,
+      student.driver ? `${student.driver.firstName} ${student.driver.lastName}` : "",
+      student.driver?.plateNumber ?? "",
+      student.monthlyFee ? Number(student.monthlyFee) : "",
+      student.parent?.firstName ?? "", student.parent?.lastName ?? "",
+      student.parent?.phone ?? "", student.parent?.address ?? "",
+      student.status === "ACTIVE" ? "Aktif" : "Pasif",
     ];
-    const csv = rows.map(r => r.map(v => esc(v)).join(",")).join("\r\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `${student.firstName}_${student.lastName}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet([headers, row]);
+    ws["!cols"] = headers.map((h, i) => ({
+      wch: Math.min(Math.max(h.length, String(row[i] ?? "").length) + 2, 45),
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Öğrenci");
+    XLSX.writeFile(wb, `${student.firstName}_${student.lastName}.xlsx`);
   }
 
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
