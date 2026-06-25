@@ -369,6 +369,11 @@ export default function OgrenciDetay() {
               ? <p className="font-semibold text-blue-700">{Number(student.monthlyFee).toLocaleString("tr-TR")} TL / ay</p>
               : <p className="text-gray-400 italic">Ücret belirlenmemiş</p>
             }
+            {student.parent?.paymentDay != null && (
+              <p className="text-blue-600 text-xs mt-2 font-medium">
+                Ödeme Günü: Her ayın {student.parent.paymentDay}. günü
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -387,9 +392,6 @@ export default function OgrenciDetay() {
             <p className="font-medium">{student.parent.firstName} {student.parent.lastName}</p>
             <p className="flex items-center gap-1.5 text-gray-600"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={student.parent.phone} /></p>
             {student.parent.profession && <p>Meslek: {student.parent.profession}</p>}
-            {student.parent.paymentDay != null && (
-              <p className="text-blue-700 font-medium">Ödeme Günü: Her ayın {student.parent.paymentDay}. günü</p>
-            )}
             {student.parent.spouseFirstName && (
               <div className="pt-2 border-t border-gray-100 mt-2">
                 {student.parent.spouseRelation ? (
