@@ -68,6 +68,7 @@ export async function PUT(req: NextRequest) {
     studentClass,
     studentTeacher,
     studentStudyTime,
+    studentSchoolType,
     studentPhone,
   } = await req.json();
 
@@ -110,6 +111,7 @@ export async function PUT(req: NextRequest) {
         class: studentClass,
         teacher: u(studentTeacher),
         studyTime: studentStudyTime,
+        schoolType: studentSchoolType || null,
         phone: studentPhone || null,
       },
     }),

@@ -85,7 +85,11 @@ export default function FirmaMesajlar() {
                 <SelectContent>
                   <SelectItem value="all">Tümü (Şoför + Veli)</SelectItem>
                   <SelectItem value="drivers">Sadece Şoförler</SelectItem>
-                  <SelectItem value="parents">Sadece Veliler</SelectItem>
+                  <SelectItem value="parents">Tüm Veliler</SelectItem>
+                  <SelectItem value="parents_anaokulu">Anaokulu Velileri</SelectItem>
+                  <SelectItem value="parents_ilkokul">İlkokul Velileri</SelectItem>
+                  <SelectItem value="parents_ortaokul">Ortaokul Velileri</SelectItem>
+                  <SelectItem value="parents_lise">Lise Velileri</SelectItem>
                 </SelectContent>
               </Select>
             </div>

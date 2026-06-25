@@ -67,7 +67,7 @@ export default function VeliKayit() {
             />
           </div>
           <div>
-            <Label>Öğrenci TC Kimlik No</Label>
+            <Label>Öğrenci TC Kimlik No <span className="text-red-500">*</span></Label>
             <Input
               placeholder="11 haneli TC kimlik numarası"
               value={form.studentTcId}
@@ -76,7 +76,7 @@ export default function VeliKayit() {
             <p className="text-xs text-gray-400 mt-1">Tam olarak 11 rakam giriniz.</p>
           </div>
           <div>
-            <Label>Cep Telefonu</Label>
+            <Label>Cep Telefonu <span className="text-red-500">*</span></Label>
             <Input type="tel" placeholder="Lütfen başında 0 olacak şekilde yazınız"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
@@ -88,7 +88,7 @@ export default function VeliKayit() {
             )}
           </div>
           <div>
-            <Label>Şifre</Label>
+            <Label>Şifre <span className="text-red-500">*</span></Label>
             <div className="relative mt-1">
               <Input type={showPass ? "text" : "password"} placeholder="En az 6 karakter"
                 value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -100,7 +100,7 @@ export default function VeliKayit() {
             </div>
           </div>
           <div>
-            <Label>Şifre Tekrar</Label>
+            <Label>Şifre Tekrar <span className="text-red-500">*</span></Label>
             <Input type="password" placeholder="Şifrenizi tekrar girin"
               value={form.passwordConfirm} onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
               required className="mt-1" />

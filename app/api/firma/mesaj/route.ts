@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { createNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
@@ -30,41 +29,48 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { title, body, target } = await req.json();
-  // target: "all" | "drivers" | "parents" | string[] (user IDs)
-
-  if (!title || !body) {
-    return NextResponse.json(
-      { error: "Başlık ve içerik zorunludur." },
-      { status: 400 }
-    );
-  }
+  if (!title || !body) return NextResponse.json({ error: "Başlık ve içerik zorunludur." }, { status: 400 });
 
   const firm = await prisma.firm.findUnique({ where: { id: user.id } });
   if (!firm) return NextResponse.json({ error: "Firma bulunamadı." }, { status: 404 });
 
   let recipients: { userId: string; userType: string }[] = [];
 
+  // Şoförler
   if (target === "all" || target === "drivers") {
     const drivers = await prisma.driver.findMany({
       where: { firmId: user.id, status: "ACTIVE" },
       select: { id: true },
     });
-    recipients.push(...drivers.map((d: { id: string }) => ({ userId: d.id, userType: "DRIVER" })));
+    recipients.push(...drivers.map((d) => ({ userId: d.id, userType: "DRIVER" })));
   }
+
+  // Veliler — okul türüne göre filtreli ya da tümü
+  const schoolTypeTargets: Record<string, string> = {
+    parents_anaokulu: "ANAOKULU",
+    parents_ilkokul: "İLKOKUL",
+    parents_ortaokul: "ORTAOKUL",
+    parents_lise: "LİSE",
+  };
 
   if (target === "all" || target === "parents") {
     const parents = await prisma.parent.findMany({
+      where: { student: { firmId: user.id, status: "ACTIVE" }, phoneVerified: true },
+      select: { id: true },
+    });
+    recipients.push(...parents.map((p) => ({ userId: p.id, userType: "PARENT" })));
+  } else if (schoolTypeTargets[target]) {
+    const parents = await prisma.parent.findMany({
       where: {
-        student: { firmId: user.id, status: "ACTIVE" },
+        student: { firmId: user.id, status: "ACTIVE", schoolType: schoolTypeTargets[target] },
         phoneVerified: true,
       },
       select: { id: true },
     });
-    recipients.push(...parents.map((p: { id: string }) => ({ userId: p.id, userType: "PARENT" })));
+    recipients.push(...parents.map((p) => ({ userId: p.id, userType: "PARENT" })));
   }
 
   if (Array.isArray(target)) {
-    // Belirli kişi listesi — userType:id formatında
     recipients = target.map((t: string) => {
       const [userType, userId] = t.split(":");
       return { userId, userType };
@@ -77,22 +83,12 @@ export async function POST(req: NextRequest) {
       title,
       body,
       recipients: {
-        create: recipients.map((r) => ({
-          userId: r.userId,
-          userType: r.userType,
-        })),
+        create: recipients.map((r) => ({ userId: r.userId, userType: r.userType })),
       },
     },
   });
 
-  // Bildirimleri gönder
-  for (const r of recipients) {
-    await createNotification({
-      [r.userType === "DRIVER" ? "driverId" : "parentId"]: r.userId,
-      title,
-      body,
-    });
-  }
+  // Bildirim oluşturulmaz — mesajlar ayrı "Mesajlar" sekmesinde gösterilir
 
   return NextResponse.json(message, { status: 201 });
 }

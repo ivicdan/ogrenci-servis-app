@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -54,13 +54,12 @@ function emptyContact(): ExtraContact {
   return { firstName: "", lastName: "", phone: "", relation: "" };
 }
 
-/** Select değerinden form değeri: "Anne"|"Baba" → direkt, diğer → "custom" */
-function getSelectValue(saved: string) {
-  if (STANDARD_RELATIONS.includes(saved)) return saved;
-  return saved ? "Diger" : "";
-}
-
-/** RelationField: select + opsiyonel text input (Diğer seçilince) */
+/**
+ * RelationField: Anne/Baba/Diğer seçici.
+ * "Diğer" seçilince serbest metin kutusu açılır.
+ * showCustom lokal state ile takip edilir — böylece onChange("") çağrısı
+ * select'i sıfırlamaz.
+ */
 function RelationField({
   label,
   value,
@@ -70,8 +69,19 @@ function RelationField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const selectVal = getSelectValue(value);
-  const isCustom = selectVal === "Diger";
+  const isStandard = STANDARD_RELATIONS.includes(value);
+  const [showCustom, setShowCustom] = useState(!isStandard && value !== "");
+  const initialized = useRef(false);
+
+  // Dışarıdan değer yüklenince (veri geldiğinde) modu senkronize et
+  useEffect(() => {
+    if (!initialized.current && value) {
+      setShowCustom(!STANDARD_RELATIONS.includes(value));
+      initialized.current = true;
+    }
+  }, [value]);
+
+  const selectVal = STANDARD_RELATIONS.includes(value) ? value : showCustom ? "Diger" : "";
 
   return (
     <div className="space-y-2">
@@ -79,8 +89,13 @@ function RelationField({
       <Select
         value={selectVal}
         onValueChange={(v) => {
-          if (v === "Diger") onChange("");
-          else onChange(v ?? "");
+          if (v === "Diger") {
+            setShowCustom(true);
+            onChange(""); // mevcut metni temizle, kullanıcı yazacak
+          } else {
+            setShowCustom(false);
+            onChange(v ?? "");
+          }
         }}
       >
         <SelectTrigger className="mt-1">
@@ -92,7 +107,7 @@ function RelationField({
           <SelectItem value="Diger">Diğer</SelectItem>
         </SelectContent>
       </Select>
-      {isCustom && (
+      {showCustom && (
         <Input
           placeholder="Yakınlık derecesi yazın (örn: Dede, Teyze...)"
           value={value}
@@ -138,6 +153,7 @@ function VeliProfilInner() {
         studentTeacher: data.student?.teacher ?? "",
         studentPhone: data.student?.phone ?? "",
         studentStudyTime: data.student?.studyTime ?? "MORNING",
+        studentSchoolType: data.student?.schoolType ?? "",
       });
       if (data.pickupLat) setPickupLat(data.pickupLat);
       if (data.pickupLng) setPickupLng(data.pickupLng);
@@ -209,6 +225,18 @@ function VeliProfilInner() {
               <div><Label>Soyad</Label><Input value={f("studentLastName")} onChange={(e) => s("studentLastName", e.target.value)} className="mt-1" required /></div>
             </div>
             <div><Label>Doğum Tarihi</Label><Input type="date" value={f("studentBirthDate")} onChange={(e) => s("studentBirthDate", e.target.value)} className="mt-1" /></div>
+            <div>
+              <Label>Okul Kademesi</Label>
+              <Select value={f("studentSchoolType")} onValueChange={(v) => s("studentSchoolType", v ?? "")}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Seçin..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ANAOKULU">Anaokulu</SelectItem>
+                  <SelectItem value="İLKOKUL">İlkokul</SelectItem>
+                  <SelectItem value="ORTAOKUL">Ortaokul</SelectItem>
+                  <SelectItem value="LİSE">Lise</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label>Okul Adı</Label><Input value={f("studentSchool")} onChange={(e) => s("studentSchool", e.target.value)} className="mt-1" required /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Sınıf</Label><Input value={f("studentClass")} onChange={(e) => s("studentClass", e.target.value)} className="mt-1" required /></div>
@@ -355,6 +383,7 @@ function VeliProfilInner() {
         <h2 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">ÖĞRENCİ BİLGİLERİ</h2>
         <Row label="Ad Soyad" value={`${f("studentFirstName")} ${f("studentLastName")}`.trim() || null} />
         <Row label="Doğum Tarihi" value={f("studentBirthDate") ? new Date(f("studentBirthDate")).toLocaleDateString("tr-TR") : null} />
+        <Row label="Okul Kademesi" value={f("studentSchoolType") ? { ANAOKULU: "Anaokulu", "İLKOKUL": "İlkokul", ORTAOKUL: "Ortaokul", "LİSE": "Lise" }[f("studentSchoolType")] ?? f("studentSchoolType") : null} />
         <Row label="Okul" value={f("studentSchool")} />
         <Row label="Sınıf" value={f("studentClass")} />
         <Row label="Öğrenim Saati" value={studyTimeLabel[f("studentStudyTime")]} />

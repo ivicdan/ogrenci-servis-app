@@ -141,6 +141,7 @@ model Student {
   teacher     String?
   phone       String?
   studyTime   StudyTime
+  schoolType  String?
   monthlyFee  Decimal?      @default(0)
   status      StudentStatus @default(ACTIVE)
   parent         Parent?
