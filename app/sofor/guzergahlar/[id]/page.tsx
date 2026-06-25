@@ -80,6 +80,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
   const osrmRouteRef = useRef<[number, number][] | null>(null);
   const rerouting = useRef(false);
   const deviationToastRef = useRef(false);
+  const sendLocationRef = useRef<(() => void) | null>(null);
 
   useEffect(() => { loadRoute(); }, [id]);
 
@@ -176,6 +177,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
         handleLocation(pos.coords.latitude, pos.coords.longitude);
       });
     }
+    sendLocationRef.current = sendLocation;
     sendLocation();
     locationIntervalRef.current = setInterval(sendLocation, 15000);
     return () => { if (locationIntervalRef.current) clearInterval(locationIntervalRef.current); };
@@ -186,7 +188,10 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
       apiFetch<Route>(`/api/sofor/guzergahlar/${id}`),
       apiFetch<Student[]>("/api/sofor/ogrenciler"),
     ]);
-    if (r) setRoute(r);
+    if (r) {
+      setRoute(r);
+      routeRef.current = r; // ref'i anında güncelle, state bekleme
+    }
     if (s) setAllStudents(s);
     setLoading(false);
   }
@@ -270,7 +275,8 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     setProcessing(null);
     if (error) return toast.error(error);
     toast.success(status === "PICKED_UP" ? "✓ Alındı işaretlendi" : "Devamsız işaretlendi");
-    loadRoute();
+    await loadRoute();
+    sendLocationRef.current?.(); // sıradaki öğrenci için hemen rota oluştur
   }
 
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;

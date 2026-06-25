@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ function validatePhone(phone: string) {
   const digits = phone.replace(/[\s\-]/g, "");
   return /^\d{11}$/.test(digits) && digits[0] === "0";
 }
+
+const STANDARD_RELATIONS = ["Anne", "Baba"];
 
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah",
@@ -41,6 +43,67 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+interface ExtraContact {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  relation: string;
+}
+
+function emptyContact(): ExtraContact {
+  return { firstName: "", lastName: "", phone: "", relation: "" };
+}
+
+/** Select değerinden form değeri: "Anne"|"Baba" → direkt, diğer → "custom" */
+function getSelectValue(saved: string) {
+  if (STANDARD_RELATIONS.includes(saved)) return saved;
+  return saved ? "Diger" : "";
+}
+
+/** RelationField: select + opsiyonel text input (Diğer seçilince) */
+function RelationField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const selectVal = getSelectValue(value);
+  const isCustom = selectVal === "Diger";
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select
+        value={selectVal}
+        onValueChange={(v) => {
+          if (v === "Diger") onChange("");
+          else onChange(v ?? "");
+        }}
+      >
+        <SelectTrigger className="mt-1">
+          <SelectValue placeholder="Seçin..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Anne">Anne</SelectItem>
+          <SelectItem value="Baba">Baba</SelectItem>
+          <SelectItem value="Diger">Diğer</SelectItem>
+        </SelectContent>
+      </Select>
+      {isCustom && (
+        <Input
+          placeholder="Yakınlık derecesi yazın (örn: Dede, Teyze...)"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="mt-1"
+        />
+      )}
+    </div>
+  );
+}
+
 function VeliProfilInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,6 +112,7 @@ function VeliProfilInner() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
+  const [extraContacts, setExtraContacts] = useState<ExtraContact[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -74,11 +138,17 @@ function VeliProfilInner() {
         studentTeacher: data.student?.teacher ?? "",
         studentPhone: data.student?.phone ?? "",
         studentStudyTime: data.student?.studyTime ?? "MORNING",
-        extraPhone: data.extraPhone ?? "",
-        extraPhoneRelation: data.extraPhoneRelation ?? "",
       });
       if (data.pickupLat) setPickupLat(data.pickupLat);
       if (data.pickupLng) setPickupLng(data.pickupLng);
+
+      // Mevcut ekstra kişileri yükle (yeni format: extraContacts Json)
+      if (Array.isArray(data.extraContacts) && data.extraContacts.length > 0) {
+        setExtraContacts(data.extraContacts);
+      } else if (data.extraPhone) {
+        // Eski format geriye dönük uyumluluk
+        setExtraContacts([{ phone: data.extraPhone, relation: data.extraPhoneRelation ?? "", firstName: "", lastName: "" }]);
+      }
     });
   }, []);
 
@@ -87,15 +157,21 @@ function VeliProfilInner() {
     const phone = form.phone ?? "";
     const spousePhone = form.spousePhone ?? "";
     const studentPhone = form.studentPhone ?? "";
-    const extraPhone = form.extraPhone ?? "";
     if (phone && !validatePhone(phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
     if (spousePhone && !validatePhone(spousePhone)) return toast.error("Eş/diğer veli telefonu 11 haneli ve 0 ile başlamalıdır.");
     if (studentPhone && !validatePhone(studentPhone)) return toast.error("Öğrenci telefonu 11 haneli olmalıdır.");
-    if (extraPhone && !validatePhone(extraPhone)) return toast.error("Ek iletişim telefonu 11 haneli ve 0 ile başlamalıdır.");
+    for (const c of extraContacts) {
+      if (c.phone && !validatePhone(c.phone)) return toast.error(`Ek iletişim (${c.firstName || "kişi"}) telefonu 11 haneli ve 0 ile başlamalıdır.`);
+    }
     setLoading(true);
     const { error } = await apiFetch("/api/veli/ogrenci", {
       method: "PUT",
-      body: JSON.stringify({ ...form, pickupLat, pickupLng }),
+      body: JSON.stringify({
+        ...form,
+        pickupLat,
+        pickupLng,
+        extraContacts: extraContacts.filter(c => c.phone || c.firstName),
+      }),
     });
     setLoading(false);
     if (error) return toast.error(error);
@@ -106,6 +182,16 @@ function VeliProfilInner() {
   const f = (k: string) => form[k] ?? "";
   const s = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
 
+  function addContact() {
+    setExtraContacts((prev) => [...prev, emptyContact()]);
+  }
+  function updateContact(idx: number, field: keyof ExtraContact, value: string) {
+    setExtraContacts((prev) => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
+  }
+  function removeContact(idx: number) {
+    setExtraContacts((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   if (isEdit) {
     return (
       <div className="max-w-md mx-auto">
@@ -115,6 +201,7 @@ function VeliProfilInner() {
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
+          {/* Öğrenci */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <h2 className="font-semibold text-gray-900 text-sm">ÖĞRENCİ BİLGİLERİ</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -148,20 +235,14 @@ function VeliProfilInner() {
             </div>
           </div>
 
+          {/* Veli */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <h2 className="font-semibold text-gray-900 text-sm">{f("parentRelation") ? `VELİ BİLGİLERİ — ${f("parentRelation").toUpperCase()}` : "VELİ BİLGİLERİ"}</h2>
-            <div>
-              <Label>Bu kişi kim?</Label>
-              <Select value={f("parentRelation")} onValueChange={(v) => s("parentRelation", v ?? "")}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Seçin..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Anne">Anne</SelectItem>
-                  <SelectItem value="Baba">Baba</SelectItem>
-                  <SelectItem value="Vasi">Vasi</SelectItem>
-                  <SelectItem value="Diğer">Diğer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <RelationField
+              label="Bu kişi kim?"
+              value={f("parentRelation")}
+              onChange={(v) => s("parentRelation", v)}
+            />
             <div>
               <Label>Telefon Numarası</Label>
               <Input type="tel" placeholder="05xx..." value={f("phone")} onChange={(e) => s("phone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
@@ -174,6 +255,7 @@ function VeliProfilInner() {
             <div><Label>İkamet Adresi</Label><Input value={f("address")} onChange={(e) => s("address", e.target.value)} className="mt-1" required /></div>
           </div>
 
+          {/* Servis konumu */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
             <div>
               <h2 className="font-semibold text-gray-900 text-sm">SERVİS ALINMA KONUMU</h2>
@@ -185,20 +267,14 @@ function VeliProfilInner() {
             )}
           </div>
 
+          {/* Eş / Diğer Veli */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <h2 className="font-semibold text-gray-900 text-sm">{f("spouseRelation") ? `EŞ / DİĞER VELİ — ${f("spouseRelation").toUpperCase()}` : "EŞ / DİĞER VELİ"}</h2>
-            <div>
-              <Label>Bu kişi kim?</Label>
-              <Select value={f("spouseRelation")} onValueChange={(v) => s("spouseRelation", v ?? "")}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Seçin..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Anne">Anne</SelectItem>
-                  <SelectItem value="Baba">Baba</SelectItem>
-                  <SelectItem value="Vasi">Vasi</SelectItem>
-                  <SelectItem value="Diğer">Diğer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <RelationField
+              label="Bu kişi kim?"
+              value={f("spouseRelation")}
+              onChange={(v) => s("spouseRelation", v)}
+            />
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Ad</Label><Input value={f("spouseFirstName")} onChange={(e) => s("spouseFirstName", e.target.value)} className="mt-1" /></div>
               <div><Label>Soyad</Label><Input value={f("spouseLastName")} onChange={(e) => s("spouseLastName", e.target.value)} className="mt-1" /></div>
@@ -210,13 +286,49 @@ function VeliProfilInner() {
             <div><Label>Meslek</Label><Input value={f("spouseProfession")} onChange={(e) => s("spouseProfession", e.target.value)} className="mt-1" /></div>
           </div>
 
+          {/* Ek İletişim — çoklu */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-            <h2 className="font-semibold text-gray-900 text-sm">EK İLETİŞİM <span className="text-gray-400 font-normal">(İsteğe bağlı)</span></h2>
-            <div>
-              <Label>Telefon Numarası</Label>
-              <Input type="tel" placeholder="05xx..." value={f("extraPhone")} onChange={(e) => s("extraPhone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900 text-sm">EK İLETİŞİM <span className="text-gray-400 font-normal">(İsteğe bağlı)</span></h2>
+              <Button type="button" size="sm" variant="outline" className="text-purple-700 border-purple-200 hover:bg-purple-50" onClick={addContact}>
+                <Plus className="w-3.5 h-3.5 mr-1" /> Ekle
+              </Button>
             </div>
-            <div><Label>Yakınlık Derecesi</Label><Input placeholder="Örn: Anne, Büyükanne..." value={f("extraPhoneRelation")} onChange={(e) => s("extraPhoneRelation", e.target.value)} className="mt-1" /></div>
+
+            {extraContacts.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-2">"Ekle" ile kişi ekleyebilirsiniz.</p>
+            )}
+
+            {extraContacts.map((contact, idx) => (
+              <div key={idx} className="bg-gray-50 rounded-xl p-4 space-y-3 relative">
+                <button
+                  type="button"
+                  onClick={() => removeContact(idx)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <p className="text-xs font-semibold text-gray-600">{idx + 1}. Kişi</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Ad</Label>
+                    <Input value={contact.firstName} onChange={(e) => updateContact(idx, "firstName", e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Soyad</Label>
+                    <Input value={contact.lastName} onChange={(e) => updateContact(idx, "lastName", e.target.value)} className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label>Yakınlık Derecesi</Label>
+                  <Input placeholder="Örn: Büyükanne, Amca..." value={contact.relation} onChange={(e) => updateContact(idx, "relation", e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Telefon Numarası</Label>
+                  <Input type="tel" placeholder="05xx..." value={contact.phone} onChange={(e) => updateContact(idx, "phone", e.target.value.replace(/\D/g, ""))} className="mt-1" maxLength={11} />
+                </div>
+              </div>
+            ))}
           </div>
 
           <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
@@ -278,11 +390,17 @@ function VeliProfilInner() {
         </div>
       )}
 
-      {(f("extraPhone") || f("extraPhoneRelation")) && (
+      {extraContacts.length > 0 && (
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
           <h2 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">EK İLETİŞİM</h2>
-          <Row label="Telefon" value={f("extraPhone")} />
-          <Row label="Yakınlık" value={f("extraPhoneRelation")} />
+          {extraContacts.map((c, i) => (
+            <div key={i} className="space-y-1">
+              {i > 0 && <hr className="border-gray-100" />}
+              {c.relation && <span className="text-xs font-semibold text-purple-700">{c.relation}</span>}
+              {(c.firstName || c.lastName) && <Row label="Ad Soyad" value={`${c.firstName} ${c.lastName}`.trim()} />}
+              <Row label="Telefon" value={c.phone} />
+            </div>
+          ))}
         </div>
       )}
 

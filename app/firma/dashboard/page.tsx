@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Bus, GraduationCap, CreditCard, Bell } from "lucide-react";
+import { Bus, GraduationCap, CreditCard, Bell, Copy, Check } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 
 interface Stats {
@@ -19,6 +19,14 @@ interface FirmProfile {
 export default function FirmaDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [firm, setFirm] = useState<FirmProfile | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function copyFirmCode() {
+    if (!firm) return;
+    navigator.clipboard.writeText(firm.firmCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   useEffect(() => {
     apiFetch<Stats>("/api/firma/dashboard").then(({ data }) => {
@@ -48,6 +56,13 @@ export default function FirmaDashboard() {
             <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg text-sm">
               {firm.firmCode}
             </span>
+            <button
+              onClick={copyFirmCode}
+              className="text-gray-400 hover:text-blue-600 transition-colors"
+              title="Kopyala"
+            >
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            </button>
             {firm.status === "PRE_REGISTERED" && (
               <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
                 Evrak Bekleniyor

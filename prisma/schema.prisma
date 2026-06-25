@@ -175,6 +175,7 @@ model Parent {
   spouseRelation     String?
   extraPhone         String?
   extraPhoneRelation String?
+  extraContacts      Json?
   parentRelation     String?
   paymentDay         Int?
   plainPassword      String?

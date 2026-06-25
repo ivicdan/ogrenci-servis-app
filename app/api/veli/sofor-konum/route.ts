@@ -92,6 +92,17 @@ export async function GET(req: NextRequest) {
   const myRouteId = isDropoff ? parent.student.dropoffRouteId : parent.student.routeId;
   const onActiveRoute = myRouteId === activeRoute.id;
 
+  // Öğrenci bugün zaten alındıysa velinin haritasını kapat
+  const pickedUp = await prisma.attendance.findFirst({
+    where: {
+      studentId: myStudentId,
+      date: { gte: todayStart },
+      type: isDropoff ? "DROPOFF" : "PICKUP",
+      status: "PICKED_UP",
+    },
+  });
+  if (pickedUp) return NextResponse.json({ tripActive: false });
+
   let etaMinutes: number | null = null;
   let distanceMeters: number | null = null;
   let routeGeometry: [number, number][] | null = null;

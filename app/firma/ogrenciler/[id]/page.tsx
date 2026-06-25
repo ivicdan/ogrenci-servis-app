@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
-import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy } from "lucide-react";
+import { GraduationCap, ArrowLeft, Bus, Phone, MapPin, CreditCard, Trash2, KeyRound, Copy, FileDown, Pencil } from "lucide-react";
 import { CopyPhone } from "@/components/copy-phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,8 @@ export default function OgrenciDetay() {
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [monthlyFee, setMonthlyFee] = useState("");
   const [savingFee, setSavingFee] = useState(false);
+  const [driverEditMode, setDriverEditMode] = useState(false);
+  const [feeEditMode, setFeeEditMode] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -100,6 +102,8 @@ export default function OgrenciDetay() {
         setStudent(s);
         setSelectedDriver(s.driver?.id ?? "");
         setMonthlyFee(s.monthlyFee ? String(Number(s.monthlyFee)) : "");
+        setDriverEditMode(!s.driver);
+        setFeeEditMode(!s.monthlyFee || Number(s.monthlyFee) === 0);
       }
       if (d) setDrivers(d);
     }).finally(() => setLoading(false));
@@ -150,6 +154,7 @@ export default function OgrenciDetay() {
     setSaving(false);
     if (error) return toast.error(error);
     toast.success("Şoför ataması güncellendi!");
+    setDriverEditMode(false);
     if (student) {
       const driver = drivers.find((d) => d.id === selectedDriver) ?? null;
       setStudent({
@@ -168,6 +173,28 @@ export default function OgrenciDetay() {
     setSavingFee(false);
     if (error) return toast.error(error);
     toast.success("Aylık ücret güncellendi!");
+    setFeeEditMode(false);
+  }
+
+  function exportStudent() {
+    if (!student) return;
+    const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["Alan", "Değer"],
+      ["Ad", student.firstName], ["Soyad", student.lastName], ["TC", student.tcId],
+      ["Okul", student.school], ["Sınıf", student.class], ["Öğrenim", student.studyTime],
+      ["Şoför", student.driver ? `${student.driver.firstName} ${student.driver.lastName}` : ""],
+      ["Plaka", student.driver?.plateNumber ?? ""],
+      ["Aylık Ücret", student.monthlyFee ? `${Number(student.monthlyFee)} TL` : ""],
+      ["Veli Ad", student.parent?.firstName ?? ""], ["Veli Soyad", student.parent?.lastName ?? ""],
+      ["Veli Tel", student.parent?.phone ?? ""], ["Adres", student.parent?.address ?? ""],
+    ];
+    const csv = rows.map(r => r.map(v => esc(v)).join(",")).join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${student.firstName}_${student.lastName}.csv`; a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (loading) return <div className="text-center py-12 text-gray-400">Yükleniyor...</div>;
@@ -175,22 +202,26 @@ export default function OgrenciDetay() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-4 h-4" /> Geri
         </button>
-        <Button
-          size="sm"
-          variant="outline"
-          className={student.status === "ACTIVE" ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "text-green-600 border-green-200 hover:bg-green-50"}
-          onClick={student.status === "ACTIVE" ? () => setPasifConfirm(true) : handleToggleStatus}
-          disabled={togglingStatus}
-        >
-          {student.status === "ACTIVE" ? "Pasife Al" : "Aktif Et"}
-        </Button>
-        <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDeleteConfirm(true)}>
-          <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="text-green-700 border-green-200 hover:bg-green-50" onClick={exportStudent}>
+            <FileDown className="w-3.5 h-3.5 mr-1" /> Excel
+          </Button>
+          <Button
+            size="sm" variant="outline"
+            className={student.status === "ACTIVE" ? "text-orange-600 border-orange-200 hover:bg-orange-50" : "text-green-600 border-green-200 hover:bg-green-50"}
+            onClick={student.status === "ACTIVE" ? () => setPasifConfirm(true) : handleToggleStatus}
+            disabled={togglingStatus}
+          >
+            {student.status === "ACTIVE" ? "Pasife Al" : "Aktif Et"}
+          </Button>
+          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDeleteConfirm(true)}>
+            <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
+          </Button>
+        </div>
       </div>
 
       <Dialog open={pasifConfirm} onOpenChange={setPasifConfirm}>
@@ -248,64 +279,95 @@ export default function OgrenciDetay() {
       </div>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-        <h2 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
-          <Bus className="w-4 h-4" /> Şoför Ataması
-        </h2>
-        <Select value={selectedDriver} onValueChange={(v) => setSelectedDriver(v ?? "")}>
-          <SelectTrigger>
-            <SelectValue>
-              {selectedDriver
-                ? (() => {
-                    const d = drivers.find((dr) => dr.id === selectedDriver);
-                    return d ? `${d.firstName} ${d.lastName} (${d.driverCode})` : "Seçin";
-                  })()
-                : "Şoför seçin"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">— Şoför atamasını kaldır —</SelectItem>
-            {drivers.map((d) => (
-              <SelectItem key={d.id} value={d.id}>
-                {d.firstName} {d.lastName} — {d.driverCode}
-                {d.plateNumber && ` · ${d.plateNumber}`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          size="sm"
-          className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
-          onClick={handleAssignDriver}
-          disabled={saving}
-        >
-          {saving ? "Kaydediliyor..." : "Şoförü Ata"}
-        </Button>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+            <Bus className="w-4 h-4" /> Şoför Ataması
+          </h2>
+          {!driverEditMode && (
+            <button onClick={() => setDriverEditMode(true)} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+              <Pencil className="w-3.5 h-3.5" /> Değiştir
+            </button>
+          )}
+        </div>
+        {driverEditMode ? (
+          <>
+            <Select value={selectedDriver} onValueChange={(v) => setSelectedDriver(v ?? "")}>
+              <SelectTrigger>
+                <SelectValue>
+                  {selectedDriver
+                    ? (() => {
+                        const d = drivers.find((dr) => dr.id === selectedDriver);
+                        return d ? `${d.firstName} ${d.lastName} (${d.driverCode})` : "Seçin";
+                      })()
+                    : "Şoför seçin"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— Şoför atamasını kaldır —</SelectItem>
+                {drivers.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.firstName} {d.lastName} — {d.driverCode}
+                    {d.plateNumber && ` · ${d.plateNumber}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => setDriverEditMode(false)}>İptal</Button>
+              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleAssignDriver} disabled={saving}>
+                {saving ? "Kaydediliyor..." : "Şoförü Ata"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700">
+            {student.driver ? (
+              <p>🚌 {student.driver.firstName} {student.driver.lastName}
+                {student.driver.plateNumber && ` · ${student.driver.plateNumber}`}
+              </p>
+            ) : (
+              <p className="text-gray-400 italic">Henüz şoför atanmamış</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-        <h2 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
-          <CreditCard className="w-4 h-4" /> Aylık Servis Ücreti
-        </h2>
-        <div className="flex gap-2 items-center">
-          <input
-            type="number"
-            min="0"
-            step="any"
-            placeholder="0.00"
-            value={monthlyFee}
-            onChange={(e) => setMonthlyFee(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
-          <span className="text-sm text-gray-500 flex-shrink-0">TL</span>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+            <CreditCard className="w-4 h-4" /> Aylık Servis Ücreti
+          </h2>
+          {!feeEditMode && (
+            <button onClick={() => setFeeEditMode(true)} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+              <Pencil className="w-3.5 h-3.5" /> Değiştir
+            </button>
+          )}
         </div>
-        <Button
-          size="sm"
-          className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
-          onClick={handleSaveFee}
-          disabled={savingFee}
-        >
-          {savingFee ? "Kaydediliyor..." : "Ücreti Kaydet"}
-        </Button>
+        {feeEditMode ? (
+          <>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number" min="0" step="any" placeholder="0.00"
+                value={monthlyFee} onChange={(e) => setMonthlyFee(e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+              <span className="text-sm text-gray-500 flex-shrink-0">TL</span>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => setFeeEditMode(false)}>İptal</Button>
+              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleSaveFee} disabled={savingFee}>
+                {savingFee ? "Kaydediliyor..." : "Ücreti Kaydet"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700">
+            {student.monthlyFee && Number(student.monthlyFee) > 0
+              ? <p className="font-semibold text-blue-700">{Number(student.monthlyFee).toLocaleString("tr-TR")} TL / ay</p>
+              : <p className="text-gray-400 italic">Ücret belirlenmemiş</p>
+            }
+          </div>
+        )}
       </div>
 
       {student.parent && (

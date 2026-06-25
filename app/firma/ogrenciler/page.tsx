@@ -1,11 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Search } from "lucide-react";
+import { GraduationCap, Search, FileDown } from "lucide-react";
 import { CopyPhone } from "@/components/copy-phone";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
+
+function downloadCSV(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
+  const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(esc).join(",")).join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface Student {
   id: string;
@@ -45,7 +55,26 @@ export default function FirmaOgrenciler() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-900">Öğrenciler</h1>
-        <span className="text-sm text-gray-500">{students.length} öğrenci</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">{students.length} öğrenci</span>
+          <Button size="sm" variant="outline" className="text-green-700 border-green-200 hover:bg-green-50"
+            onClick={() => {
+              const headers = ["Ad", "Soyad", "TC Kimlik", "Okul", "Sınıf", "Öğrenim Saati", "Şoför", "Plaka", "Veli Ad", "Veli Soyad", "Veli Tel", "Adres", "Durum"];
+              const rows = students.map(s => [
+                s.firstName, s.lastName, s.tcId, s.school, s.class,
+                s.studyTime === "MORNING" ? "Sabah" : "Öğleden Sonra",
+                s.driver ? `${s.driver.firstName} ${s.driver.lastName}` : "",
+                s.driver?.plateNumber ?? "",
+                s.parent?.firstName ?? "", s.parent?.lastName ?? "",
+                s.parent?.phone ?? "", s.parent?.address ?? "",
+                s.status === "ACTIVE" ? "Aktif" : "Pasif",
+              ]);
+              downloadCSV(`ogrenciler_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+            }}
+          >
+            <FileDown className="w-3.5 h-3.5 mr-1" /> Excel
+          </Button>
+        </div>
       </div>
 
       <div className="relative mb-4">

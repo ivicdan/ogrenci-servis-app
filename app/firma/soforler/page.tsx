@@ -1,7 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Bus, Copy } from "lucide-react";
+import { Plus, Bus, Copy, FileDown } from "lucide-react";
+
+function downloadCSV(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
+  const esc = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(esc).join(",")).join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 import { CopyPhone } from "@/components/copy-phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,9 +92,24 @@ export default function FirmaSoforler() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-gray-900">Şoförler</h1>
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-1" /> Şoför Ekle
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="text-green-700 border-green-200 hover:bg-green-50"
+            onClick={() => {
+              const headers = ["Giriş Kodu", "Ad", "Soyad", "Telefon", "Plaka", "Hostes", "Öğrenci Sayısı", "Durum"];
+              const rows = drivers.map(d => [
+                d.driverCode, d.firstName, d.lastName, d.phone,
+                d.plateNumber ?? "", d.assistantName ?? "",
+                d._count.students, d.status === "ACTIVE" ? "Aktif" : "Pasif",
+              ]);
+              downloadCSV(`soforler_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+            }}
+          >
+            <FileDown className="w-3.5 h-3.5 mr-1" /> Excel
+          </Button>
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1" /> Şoför Ekle
+          </Button>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
