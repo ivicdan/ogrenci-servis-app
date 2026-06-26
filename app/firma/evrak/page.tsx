@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
 const WHATSAPP = "905XXXXXXXXX"; // ← WhatsApp numaranızı girin (başında 90, boşluksuz)
-const EMAIL = "info@example.com"; // ← E-posta adresinizi girin
+const EMAIL = "info@ogrenciservisi.online";
 
 export default function FirmaEvrak() {
   const router = useRouter();
