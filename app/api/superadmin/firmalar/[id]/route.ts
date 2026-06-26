@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual, createHmac } from "crypto";
 import { prisma } from "@/lib/db";
 
 function requireAdmin(req: NextRequest) {
   const ADMIN_SECRET = process.env.ADMIN_SECRET;
   if (!ADMIN_SECRET) return false;
   const auth = req.headers.get("authorization");
-  return auth === `Bearer ${ADMIN_SECRET}`;
+  const provided = auth?.startsWith("Bearer ") ? auth.slice(7) : "";
+  const expected = createHmac("sha256", ADMIN_SECRET).update("superadmin-session").digest("hex");
+  try {
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,7 +41,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!requireAdmin(req)) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
-
   await prisma.firm.delete({ where: { id } });
 
   return NextResponse.json({ success: true });

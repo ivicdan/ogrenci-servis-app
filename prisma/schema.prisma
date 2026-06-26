@@ -104,7 +104,6 @@ model Driver {
   lastName      String
   plateNumber         String?
   assistantName       String?
-  plainPassword       String?
   sessionToken        String?
   currentLat          Float?
   currentLng          Float?
@@ -182,7 +181,6 @@ model Parent {
   extraContacts      Json?
   parentRelation     String?
   paymentDay         Int?
-  plainPassword      String?
   sessionToken       String?
   notifications      Notification[]
   absenceReports     AbsenceReport[]

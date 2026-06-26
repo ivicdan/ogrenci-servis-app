@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual, createHmac } from "crypto";
 import { prisma } from "@/lib/db";
 
 function requireAdmin(req: NextRequest) {
   const ADMIN_SECRET = process.env.ADMIN_SECRET;
   if (!ADMIN_SECRET) return false;
   const auth = req.headers.get("authorization");
-  return auth === `Bearer ${ADMIN_SECRET}`;
+  const provided = auth?.startsWith("Bearer ") ? auth.slice(7) : "";
+  const expected = createHmac("sha256", ADMIN_SECRET).update("superadmin-session").digest("hex");
+  try {
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(req: NextRequest) {

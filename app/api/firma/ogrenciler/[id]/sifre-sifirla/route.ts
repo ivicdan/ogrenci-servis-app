@@ -26,7 +26,7 @@ export async function POST(
 
   await prisma.parent.update({
     where: { id: student.parent.id },
-    data: { password: hashedPassword, plainPassword },
+    data: { password: hashedPassword },
   });
 
   return NextResponse.json({ plainPassword });

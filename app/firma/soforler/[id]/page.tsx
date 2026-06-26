@@ -22,7 +22,7 @@ const routeTypeLabel: Record<string, string> = {
 interface DriverDetail {
   id: string; driverCode: string; firstName: string; lastName: string;
   phone: string; tcId: string; plateNumber: string | null;
-  assistantName: string | null; plainPassword: string | null; status: string; createdAt: string;
+  assistantName: string | null; status: string; createdAt: string;
   _count: { students: number; routes: number };
   students: {
     id: string; firstName: string; lastName: string; school: string;
@@ -80,7 +80,6 @@ export default function SoforDetay() {
     if (error) return toast.error(error);
     if (data) {
       setResetPassword(data.plainPassword);
-      if (driver) setDriver({ ...driver, plainPassword: data.plainPassword });
     }
   }
 
@@ -231,10 +230,10 @@ export default function SoforDetay() {
             </div>
             <div className="flex-1">
               <p className="text-xs text-gray-500">Şifre</p>
-              {driver.plainPassword ? (
+              {resetPassword ? (
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg text-sm">{driver.plainPassword}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(driver.plainPassword!); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
+                  <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg text-sm">{resetPassword}</span>
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(resetPassword); toast.success("Kopyalandı!"); }} className="text-gray-400 hover:text-gray-600">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>

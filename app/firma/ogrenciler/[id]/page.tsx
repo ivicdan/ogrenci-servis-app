@@ -63,7 +63,6 @@ interface StudentDetail {
     extraPhoneRelation: string | null;
     parentRelation: string | null;
     spouseRelation: string | null;
-    plainPassword: string | null;
     paymentDay: number | null;
     pickupLat: number | null;
     pickupLng: number | null;
@@ -146,9 +145,6 @@ export default function OgrenciDetay() {
     if (error) return toast.error(error);
     if (data?.plainPassword) {
       setNewPass(data.plainPassword);
-      if (student?.parent) {
-        setStudent({ ...student, parent: { ...student.parent, plainPassword: data.plainPassword } });
-      }
     }
   }
 
@@ -506,13 +502,14 @@ export default function OgrenciDetay() {
             <h3 className="font-semibold text-gray-900 text-xs mb-2 flex items-center gap-1.5">
               <KeyRound className="w-3.5 h-3.5" /> Veli Giriş Şifresi
             </h3>
-            {student.parent.plainPassword ? (
+            {newPass ? (
               <div className="flex items-center gap-2">
                 <span className="font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg text-sm">
-                  {newPass ?? student.parent.plainPassword}
+                  {newPass}
                 </span>
                 <button
-                  onClick={() => { navigator.clipboard.writeText(newPass ?? student.parent!.plainPassword!); toast.success("Kopyalandı!"); }}
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(newPass); toast.success("Kopyalandı!"); }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <Copy className="w-3.5 h-3.5" />

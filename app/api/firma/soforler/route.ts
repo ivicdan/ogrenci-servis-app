@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
       assistantName: assistantName ? trUpperCase(assistantName) : assistantName,
       firmId: user.id,
       password: hashedPassword,
-      plainPassword,
     },
     select: {
       id: true,

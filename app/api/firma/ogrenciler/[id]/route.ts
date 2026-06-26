@@ -33,7 +33,6 @@ export async function GET(
           extraPhoneRelation: true,
           parentRelation: true,
           spouseRelation: true,
-          plainPassword: true,
           paymentDay: true,
           pickupLat: true,
           pickupLng: true,

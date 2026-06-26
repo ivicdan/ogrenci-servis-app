@@ -3,48 +3,46 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { rateLimit, ipKey } from "@/lib/rate-limit";
+
+const GENERIC_ERROR = "TC kimlik no veya şifre hatalı.";
+const DUMMY_HASH = "$2a$10$dummyhashfortimingattackpreventiononlyxxxxxxxxxxxxxxxx";
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(ipKey(req, "veli-giris"), 5, 15 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Çok fazla deneme. ${rl.retryAfter} saniye bekleyin.` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const { studentTcId, password } = await req.json();
 
     if (!studentTcId || !password) {
-      return NextResponse.json(
-        { error: "Öğrenci TC kimlik no ve şifre zorunludur." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Tüm alanlar zorunludur." }, { status: 400 });
     }
 
     const student = await prisma.student.findFirst({
       where: { tcId: studentTcId, status: "ACTIVE" },
     });
 
-    if (!student) {
-      return NextResponse.json(
-        { error: "Bu TC kimlik numarasına ait aktif öğrenci bulunamadı." },
-        { status: 404 }
-      );
-    }
+    const parent = student
+      ? await prisma.parent.findUnique({
+          where: { studentId: student.id },
+          include: {
+            student: { select: { id: true, firstName: true, lastName: true, firmId: true } },
+          },
+        })
+      : null;
 
-    const parent = await prisma.parent.findUnique({
-      where: { studentId: student.id },
-      include: {
-        student: {
-          select: { id: true, firstName: true, lastName: true, firmId: true },
-        },
-      },
-    });
+    const valid = parent
+      ? await bcrypt.compare(password, parent.password)
+      : await bcrypt.compare(password, DUMMY_HASH).then(() => false);
 
-    if (!parent) {
-      return NextResponse.json(
-        { error: "Bu öğrenciye ait veli kaydı bulunamadı. Önce kayıt olun." },
-        { status: 404 }
-      );
-    }
-
-    const valid = await bcrypt.compare(password, parent.password);
-    if (!valid) {
-      return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
+    if (!student || !parent || !valid) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 401 });
     }
 
     const sessionToken = randomUUID();
