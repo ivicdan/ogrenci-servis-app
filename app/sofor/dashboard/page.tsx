@@ -12,10 +12,10 @@ interface Route {
 }
 
 const routeTypeLabel: Record<string, string> = {
-  MORNING_PICKUP: "Sabah Alış",
-  MORNING_DROPOFF: "Sabah Bırakış",
-  AFTERNOON_PICKUP: "Öğle Alış",
-  AFTERNOON_DROPOFF: "Öğle Bırakış",
+  MORNING_PICKUP: "Sabah Gidiş",
+  AFTERNOON_PICKUP: "Öğlen Gidiş",
+  MORNING_DROPOFF: "Öğlen Çıkış",
+  AFTERNOON_DROPOFF: "Akşam Çıkış",
 };
 
 const routeTypeColor: Record<string, string> = {

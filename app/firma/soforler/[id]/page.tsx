@@ -15,8 +15,8 @@ const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah", AFTERNOON: "Öğleden Sonra",
 };
 const routeTypeLabel: Record<string, string> = {
-  MORNING_PICKUP: "Sabah Alış", MORNING_DROPOFF: "Sabah Bırakış",
-  AFTERNOON_PICKUP: "Öğle Alış", AFTERNOON_DROPOFF: "Öğle Bırakış",
+  MORNING_PICKUP: "Sabah Gidiş", MORNING_DROPOFF: "Öğlen Çıkış",
+  AFTERNOON_PICKUP: "Öğlen Gidiş", AFTERNOON_DROPOFF: "Akşam Çıkış",
 };
 
 interface DriverDetail {

@@ -62,10 +62,10 @@ interface TrackingData {
 
 function routeTypeLabel(type: string) {
   switch (type) {
-    case "MORNING_PICKUP": return "Sabah Alış";
-    case "MORNING_DROPOFF": return "Sabah Bırakış";
-    case "AFTERNOON_PICKUP": return "Öğleden Sonra Alış";
-    case "AFTERNOON_DROPOFF": return "Öğleden Sonra Bırakış";
+    case "MORNING_PICKUP": return "Sabah Gidiş";
+    case "MORNING_DROPOFF": return "Öğlen Çıkış";
+    case "AFTERNOON_PICKUP": return "Öğlen Gidiş";
+    case "AFTERNOON_DROPOFF": return "Akşam Çıkış";
     default: return type;
   }
 }

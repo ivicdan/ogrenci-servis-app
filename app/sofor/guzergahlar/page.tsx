@@ -19,10 +19,10 @@ interface Route {
 }
 
 const routeTypeLabel: Record<string, string> = {
-  MORNING_PICKUP: "Sabah Alış",
-  MORNING_DROPOFF: "Sabah Bırakış",
-  AFTERNOON_PICKUP: "Öğlen Alış",
-  AFTERNOON_DROPOFF: "Öğlen Bırakış",
+  MORNING_PICKUP: "Sabah Gidiş",
+  AFTERNOON_PICKUP: "Öğlen Gidiş",
+  MORNING_DROPOFF: "Öğlen Çıkış",
+  AFTERNOON_DROPOFF: "Akşam Çıkış",
 };
 
 const GIDIS_TYPES = ["MORNING_PICKUP", "AFTERNOON_PICKUP"];
@@ -53,7 +53,7 @@ export default function SoforGuzergahlar() {
     if (error) return toast.error(error);
     toast.success("Güzergah eklendi!");
     setOpen(false);
-    setForm({ name: "", type: "MORNING_PICKUP" });
+    setForm({ name: "", type: tab === "gidis" ? "MORNING_PICKUP" : "MORNING_DROPOFF" });
     loadRoutes();
   }
 
@@ -64,7 +64,10 @@ export default function SoforGuzergahlar() {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold text-gray-900">Güzergahlarım</h1>
-        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setOpen(true)}>
+        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => {
+          setForm({ name: "", type: tab === "gidis" ? "MORNING_PICKUP" : "MORNING_DROPOFF" });
+          setOpen(true);
+        }}>
           <Plus className="w-4 h-4 mr-1" /> Ekle
         </Button>
       </div>
@@ -99,8 +102,8 @@ export default function SoforGuzergahlar() {
                   <SelectValue>{routeTypeLabel[form.type]}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(routeTypeLabel).map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                  {(tab === "gidis" ? GIDIS_TYPES : DONUS_TYPES).map((v) => (
+                    <SelectItem key={v} value={v}>{routeTypeLabel[v]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
