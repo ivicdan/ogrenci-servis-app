@@ -48,9 +48,7 @@ function FirmaGirisInner() {
       remember ? localStorage.setItem(STORAGE_KEY, JSON.stringify(form)) : localStorage.removeItem(STORAGE_KEY);
       setToken(data.token);
       setUserType("FIRM");
-      if (data.firm.status === "PRE_REGISTERED") router.push("/firma/evrak");
-      else if (data.firm.status === "PENDING_APPROVAL") router.push("/firma/onay-bekleniyor");
-      else router.push("/firma/dashboard");
+      router.push("/firma/dashboard");
     }
   }
 

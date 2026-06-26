@@ -23,10 +23,20 @@ export default function FirmaKayit() {
   const [kvkkChecked, setKvkkChecked] = useState(false);
   const [kvkkOpen, setKvkkOpen] = useState(false);
 
+  function validateTcId(val: string) {
+    return /^\d{11}$/.test(val);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validateTcId(form.taxOrTcId)) {
+      return toast.error("TC Kimlik No tam olarak 11 rakam olmalıdır.");
+    }
     if (!validatePhone(form.phone)) {
       return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
+    }
+    if (form.password.length < 6) {
+      return toast.error("Şifre en az 6 karakter olmalıdır.");
     }
     if (form.password !== form.passwordConfirm) {
       return toast.error("Şifreler eşleşmiyor.");
@@ -44,8 +54,7 @@ export default function FirmaKayit() {
     if (data?.token) {
       setToken(data.token);
       setUserType("FIRM");
-      toast.success("Ön kayıt tamamlandı! Şirket evraklarınızı yükleyin.");
-      router.push("/firma/evrak");
+      router.push("/firma/dashboard");
     }
   }
 
@@ -60,10 +69,22 @@ export default function FirmaKayit() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="taxOrTcId">Vergi No / TC Kimlik No</Label>
-            <Input id="taxOrTcId" placeholder="Vergi veya TC numaranız"
-              value={form.taxOrTcId} onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value })}
-              required className="mt-1" />
+            <Label htmlFor="taxOrTcId">TC Kimlik No</Label>
+            <Input
+              id="taxOrTcId"
+              placeholder="11 haneli TC kimlik numarası"
+              value={form.taxOrTcId}
+              onChange={(e) => setForm({ ...form, taxOrTcId: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+              required
+              className="mt-1"
+              maxLength={11}
+              inputMode="numeric"
+            />
+            {form.taxOrTcId.length > 0 && form.taxOrTcId.length !== 11 ? (
+              <p className="text-xs text-red-500 mt-1">{form.taxOrTcId.length}/11 hane girildi.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">Tam 11 rakam giriniz.</p>
+            )}
           </div>
           <div>
             <Label htmlFor="phone">Cep Telefonu</Label>
