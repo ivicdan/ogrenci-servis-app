@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
       address: address ? trUpperCase(address) : address,
       iban,
       documents,
-      status: name && address ? "ACTIVE" : undefined,
+      status: name && address ? "PENDING_APPROVAL" : undefined,
     },
     select: {
       id: true,

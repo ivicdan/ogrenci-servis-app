@@ -100,8 +100,7 @@ export default function FirmaEvrak() {
     setLoading(false);
 
     if (error) return toast.error(error);
-    toast.success("Evraklar yüklendi. Hesabınız incelemeye alındı!");
-    router.push("/firma/dashboard");
+    router.push("/firma/onay-bekleniyor");
   }
 
   const requiredDone = DOC_FIELDS.filter((d) => d.required).every(

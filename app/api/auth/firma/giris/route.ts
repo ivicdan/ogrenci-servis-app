@@ -17,15 +17,19 @@ export async function POST(req: NextRequest) {
 
     const firm = await prisma.firm.findUnique({ where: { taxOrTcId } });
     if (!firm) {
-      return NextResponse.json(
-        { error: "Kullanıcı bulunamadı." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Kullanıcı bulunamadı." }, { status: 404 });
     }
 
     const valid = await bcrypt.compare(password, firm.password);
     if (!valid) {
       return NextResponse.json({ error: "Şifre hatalı." }, { status: 401 });
+    }
+
+    if (firm.status === "SUSPENDED") {
+      return NextResponse.json(
+        { error: "Hesabınız askıya alınmıştır. Destek için iletişime geçin." },
+        { status: 403 }
+      );
     }
 
     const sessionToken = randomUUID();

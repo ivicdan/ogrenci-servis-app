@@ -11,6 +11,7 @@ datasource db {
 
 enum FirmStatus {
   PRE_REGISTERED
+  PENDING_APPROVAL
   ACTIVE
   SUSPENDED
 }
