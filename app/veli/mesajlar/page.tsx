@@ -21,8 +21,9 @@ export default function VeliMesajlar() {
     apiFetch<Message[]>("/api/veli/mesaj")
       .then(({ data }) => { if (data) setMessages(data); })
       .finally(() => setLoading(false));
-    // Okundu işaretle
-    apiFetch("/api/veli/mesaj", { method: "PUT" });
+    apiFetch("/api/veli/mesaj", { method: "PUT" }).then(() => {
+      window.dispatchEvent(new Event("badge-refresh"));
+    });
   }, []);
 
   return (

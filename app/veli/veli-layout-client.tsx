@@ -53,7 +53,11 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
     };
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
+    window.addEventListener("badge-refresh", fetchCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("badge-refresh", fetchCount);
+    };
   }, [isPublic]);
 
   // Mesaj polling
@@ -68,18 +72,16 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
           }
           prevUnreadMsg.current = data.count;
           setUnreadMsg(data.count);
-          const total = unread + data.count;
-          if ("setAppBadge" in navigator) {
-            if (total > 0) navigator.setAppBadge(total).catch(() => {});
-            else navigator.clearAppBadge().catch(() => {});
-          }
         }
       });
     };
     fetchMsgCount();
     const interval = setInterval(fetchMsgCount, 30000);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.addEventListener("badge-refresh", fetchMsgCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("badge-refresh", fetchMsgCount);
+    };
   }, [isPublic]);
 
   // App badge (bildirimler)

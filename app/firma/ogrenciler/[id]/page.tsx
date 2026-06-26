@@ -96,6 +96,7 @@ export default function OgrenciDetay() {
   const [feeEditMode, setFeeEditMode] = useState(false);
   const [serviceStartDate, setServiceStartDate] = useState("");
   const [savingStartDate, setSavingStartDate] = useState(false);
+  const [startDateEditMode, setStartDateEditMode] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -107,6 +108,7 @@ export default function OgrenciDetay() {
         setSelectedDriver(s.driver?.id ?? "");
         setMonthlyFee(s.monthlyFee ? String(Number(s.monthlyFee)) : "");
         setServiceStartDate(s.serviceStartDate ? s.serviceStartDate.split("T")[0] : "");
+        setStartDateEditMode(!s.serviceStartDate);
         setDriverEditMode(!s.driver);
         setFeeEditMode(!s.monthlyFee || Number(s.monthlyFee) === 0);
       }
@@ -191,6 +193,7 @@ export default function OgrenciDetay() {
     if (error) return toast.error(error);
     toast.success("Başlangıç tarihi güncellendi!");
     setStudent((prev) => prev ? { ...prev, serviceStartDate: serviceStartDate || null } : prev);
+    setStartDateEditMode(false);
   }
 
   function exportStudent() {
@@ -399,23 +402,43 @@ export default function OgrenciDetay() {
           <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
             <Bus className="w-4 h-4" /> Servise Başlangıç Tarihi
           </h2>
+          {!startDateEditMode && (
+            <button
+              type="button"
+              onClick={() => setStartDateEditMode(true)}
+              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Değiştir
+            </button>
+          )}
         </div>
-        <div className="flex gap-2 items-center">
-          <input
-            type="date"
-            title="Servise başlangıç tarihi"
-            value={serviceStartDate}
-            onChange={(e) => setServiceStartDate(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveStartDate} disabled={savingStartDate}>
-            {savingStartDate ? "..." : "Kaydet"}
-          </Button>
-        </div>
-        {student.serviceStartDate && (
-          <p className="text-xs text-gray-400 mt-2">
-            Mevcut: {new Date(student.serviceStartDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
-          </p>
+        {startDateEditMode ? (
+          <>
+            <div className="flex gap-2 items-center">
+              <input
+                type="date"
+                title="Servise başlangıç tarihi"
+                value={serviceStartDate}
+                onChange={(e) => setServiceStartDate(e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => setStartDateEditMode(false)}>İptal</Button>
+              <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleSaveStartDate} disabled={savingStartDate}>
+                {savingStartDate ? "Kaydediliyor..." : "Kaydet"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700">
+            {student.serviceStartDate
+              ? <p className="font-semibold text-blue-700">
+                  {new Date(student.serviceStartDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              : <p className="text-gray-400 italic">Tarih belirlenmemiş</p>
+            }
+          </div>
         )}
       </div>
 

@@ -52,7 +52,11 @@ export default function SoforLayoutClient({ children }: { children: React.ReactN
     };
     fetchCount();
     const interval = setInterval(fetchCount, 20000);
-    return () => clearInterval(interval);
+    window.addEventListener("badge-refresh", fetchCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("badge-refresh", fetchCount);
+    };
   }, [isPublic]);
 
   // Mesaj polling (firma + şoför → şoföre gelen mesajlar)
@@ -72,7 +76,11 @@ export default function SoforLayoutClient({ children }: { children: React.ReactN
     };
     fetchMsgCount();
     const interval = setInterval(fetchMsgCount, 30000);
-    return () => clearInterval(interval);
+    window.addEventListener("badge-refresh", fetchMsgCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("badge-refresh", fetchMsgCount);
+    };
   }, [isPublic]);
 
   // App badge (toplam)

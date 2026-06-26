@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MessageSquare, Send, CheckCheck, Trash2 } from "lucide-react";
+import { MessageSquare, Send, CheckCheck, Trash2, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,26 @@ interface Message {
   _count: { recipients: number };
 }
 
+interface UnreadUser {
+  id: string;
+  name: string;
+  phone: string;
+  type: string;
+}
+
+interface UnreadData {
+  parents: UnreadUser[];
+  drivers: UnreadUser[];
+}
+
 export default function FirmaMesajlar() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [form, setForm] = useState({ title: "", body: "", target: "all" });
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [unreadData, setUnreadData] = useState<Record<string, UnreadData>>({});
+  const [loadingUnread, setLoadingUnread] = useState<string | null>(null);
 
   useEffect(() => {
     loadMessages();
@@ -59,6 +74,19 @@ export default function FirmaMesajlar() {
     } else {
       toast.success("Mesaj silindi.");
     }
+  }
+
+  async function toggleUnread(id: string) {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (unreadData[id]) return;
+    setLoadingUnread(id);
+    const { data } = await apiFetch<UnreadData>(`/api/firma/mesaj/${id}/okunmayanlar`);
+    if (data) setUnreadData((prev) => ({ ...prev, [id]: data }));
+    setLoadingUnread(null);
   }
 
   return (
@@ -102,9 +130,7 @@ export default function FirmaMesajlar() {
               <Textarea
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
-                required
-                rows={4}
-                className="mt-1 resize-none"
+                required rows={4} className="mt-1 resize-none"
               />
             </div>
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
@@ -124,32 +150,78 @@ export default function FirmaMesajlar() {
         {messages.map((m) => {
           const total = m._count.recipients;
           const read = m.readCount;
+          const unread = total - read;
           const allRead = total > 0 && read === total;
+          const isExpanded = expandedId === m.id;
+          const ud = unreadData[m.id];
+
           return (
-            <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900">{m.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">{m.body}</p>
-                </div>
-                <div className="flex items-start gap-2 flex-shrink-0">
-                  <div className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${allRead ? "text-green-600" : "text-gray-400"}`}>
-                    <CheckCheck className="w-3.5 h-3.5" />
-                    <span>{read}/{total}</span>
+            <div key={m.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900">{m.title}</p>
+                    <p className="text-sm text-gray-600 mt-1">{m.body}</p>
                   </div>
-                  <button
-                    onClick={() => deleteMessage(m.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-start gap-2 flex-shrink-0">
+                    <div className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${allRead ? "text-green-600" : "text-orange-500"}`}>
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      <span>{read}/{total}</span>
+                    </div>
+                    <button
+                      type="button"
+                      title="Mesajı sil"
+                      onClick={() => deleteMessage(m.id)}
+                      className="text-gray-300 hover:text-red-500 transition-colors mt-0.5"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-400">
+                    {new Date(m.createdAt).toLocaleDateString("tr-TR", {
+                      day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </p>
+                  {unread > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleUnread(m.id)}
+                      className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 font-medium transition-colors"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      {unread} okumadı
+                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                  )}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(m.createdAt).toLocaleDateString("tr-TR", {
-                  day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
-                })}
-              </p>
+
+              {/* Okunmayanlar listesi */}
+              {isExpanded && (
+                <div className="border-t border-gray-100 bg-orange-50 px-4 py-3">
+                  {loadingUnread === m.id ? (
+                    <p className="text-xs text-gray-400 text-center py-2">Yükleniyor...</p>
+                  ) : ud && (ud.parents.length + ud.drivers.length) === 0 ? (
+                    <p className="text-xs text-green-600 text-center py-1">Tüm alıcılar okudu ✓</p>
+                  ) : ud ? (
+                    <div className="space-y-1">
+                      {[...ud.drivers, ...ud.parents].map((u) => (
+                        <div key={u.id} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-700 font-medium">{u.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-1.5 py-0.5 rounded-full font-semibold ${u.type === "Şoför" ? "bg-green-100 text-green-700" : "bg-purple-100 text-purple-700"}`}>
+                              {u.type}
+                            </span>
+                            <span className="text-gray-400">{u.phone}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           );
         })}
