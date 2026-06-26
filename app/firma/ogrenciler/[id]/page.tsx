@@ -46,6 +46,7 @@ interface StudentDetail {
   studyTime: string;
   status: string;
   monthlyFee: string | null;
+  serviceStartDate: string | null;
   driver: { id: string; firstName: string; lastName: string; driverCode: string; plateNumber: string | null } | null;
   parent: {
     id: string;
@@ -93,6 +94,8 @@ export default function OgrenciDetay() {
   const [savingFee, setSavingFee] = useState(false);
   const [driverEditMode, setDriverEditMode] = useState(false);
   const [feeEditMode, setFeeEditMode] = useState(false);
+  const [serviceStartDate, setServiceStartDate] = useState("");
+  const [savingStartDate, setSavingStartDate] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -103,6 +106,7 @@ export default function OgrenciDetay() {
         setStudent(s);
         setSelectedDriver(s.driver?.id ?? "");
         setMonthlyFee(s.monthlyFee ? String(Number(s.monthlyFee)) : "");
+        setServiceStartDate(s.serviceStartDate ? s.serviceStartDate.split("T")[0] : "");
         setDriverEditMode(!s.driver);
         setFeeEditMode(!s.monthlyFee || Number(s.monthlyFee) === 0);
       }
@@ -175,6 +179,18 @@ export default function OgrenciDetay() {
     if (error) return toast.error(error);
     toast.success("Aylık ücret güncellendi!");
     setFeeEditMode(false);
+  }
+
+  async function handleSaveStartDate() {
+    setSavingStartDate(true);
+    const { error } = await apiFetch(`/api/firma/ogrenciler/${params.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ serviceStartDate: serviceStartDate || null }),
+    });
+    setSavingStartDate(false);
+    if (error) return toast.error(error);
+    toast.success("Başlangıç tarihi güncellendi!");
+    setStudent((prev) => prev ? { ...prev, serviceStartDate: serviceStartDate || null } : prev);
   }
 
   function exportStudent() {
@@ -375,6 +391,31 @@ export default function OgrenciDetay() {
               </p>
             )}
           </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+            <Bus className="w-4 h-4" /> Servise Başlangıç Tarihi
+          </h2>
+        </div>
+        <div className="flex gap-2 items-center">
+          <input
+            type="date"
+            title="Servise başlangıç tarihi"
+            value={serviceStartDate}
+            onChange={(e) => setServiceStartDate(e.target.value)}
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveStartDate} disabled={savingStartDate}>
+            {savingStartDate ? "..." : "Kaydet"}
+          </Button>
+        </div>
+        {student.serviceStartDate && (
+          <p className="text-xs text-gray-400 mt-2">
+            Mevcut: {new Date(student.serviceStartDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
         )}
       </div>
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { createNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["DRIVER"]);
@@ -10,7 +9,7 @@ export async function GET(req: NextRequest) {
   const recipients = await prisma.messageRecipient.findMany({
     where: { userId: user.id, userType: "DRIVER" },
     include: {
-      message: { select: { id: true, title: true, body: true, createdAt: true } },
+      message: { select: { id: true, title: true, body: true, createdAt: true, driverId: true } },
     },
     orderBy: { message: { createdAt: "desc" } },
   });
@@ -22,6 +21,7 @@ export async function GET(req: NextRequest) {
       body: r.message.body,
       createdAt: r.message.createdAt,
       read: r.read,
+      senderType: r.message.driverId ? "DRIVER" : "FIRM",
     }))
   );
 }
@@ -43,11 +43,11 @@ export async function POST(req: NextRequest) {
   const { title, body, schoolType } = await req.json();
   if (!title || !body) return NextResponse.json({ error: "Başlık ve mesaj zorunludur." }, { status: 400 });
 
+  const driver = await prisma.driver.findUnique({ where: { id: user.id }, select: { firmId: true } });
+  if (!driver) return NextResponse.json({ error: "Şoför bulunamadı." }, { status: 404 });
+
   const schoolTypeMap: Record<string, string> = {
-    anaokulu: "ANAOKULU",
-    ilkokul: "İLKOKUL",
-    ortaokul: "ORTAOKUL",
-    lise: "LİSE",
+    anaokulu: "ANAOKULU", ilkokul: "İLKOKUL", ortaokul: "ORTAOKUL", lise: "LİSE",
   };
 
   const students = await prisma.student.findMany({
@@ -59,13 +59,20 @@ export async function POST(req: NextRequest) {
     select: { parent: { select: { id: true } } },
   });
 
-  let notified = 0;
-  for (const s of students) {
-    if (s.parent?.id) {
-      await createNotification({ parentId: s.parent.id, title, body });
-      notified++;
-    }
-  }
+  const parentIds = students.filter(s => s.parent?.id).map(s => s.parent!.id);
+  if (parentIds.length === 0) return NextResponse.json({ ok: true, notified: 0 });
 
-  return NextResponse.json({ ok: true, notified });
+  await prisma.message.create({
+    data: {
+      firmId: driver.firmId,
+      driverId: user.id,
+      title,
+      body,
+      recipients: {
+        create: parentIds.map(parentId => ({ userId: parentId, userType: "PARENT" })),
+      },
+    },
+  });
+
+  return NextResponse.json({ ok: true, notified: parentIds.length });
 }

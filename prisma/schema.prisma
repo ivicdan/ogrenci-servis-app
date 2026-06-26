@@ -115,6 +115,7 @@ model Driver {
   students      Student[]
   attendances   Attendance[]
   notifications Notification[]
+  messages      Message[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -141,7 +142,8 @@ model Student {
   teacher     String?
   phone       String?
   studyTime   StudyTime
-  schoolType  String?
+  schoolType       String?
+  serviceStartDate DateTime?
   monthlyFee  Decimal?      @default(0)
   status      StudentStatus @default(ACTIVE)
   parent         Parent?
@@ -270,6 +272,8 @@ model Message {
   id         String             @id @default(uuid())
   firmId     String
   firm       Firm               @relation(fields: [firmId], references: [id])
+  driverId   String?
+  driver     Driver?            @relation(fields: [driverId], references: [id])
   title      String
   body       String
   recipients MessageRecipient[]

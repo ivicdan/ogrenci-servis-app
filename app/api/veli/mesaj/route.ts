@@ -9,7 +9,12 @@ export async function GET(req: NextRequest) {
   const recipients = await prisma.messageRecipient.findMany({
     where: { userId: user.id, userType: "PARENT" },
     include: {
-      message: { select: { id: true, title: true, body: true, createdAt: true } },
+      message: {
+        select: {
+          id: true, title: true, body: true, createdAt: true, driverId: true,
+          driver: { select: { firstName: true, lastName: true } },
+        },
+      },
     },
     orderBy: { message: { createdAt: "desc" } },
   });
@@ -21,6 +26,10 @@ export async function GET(req: NextRequest) {
       body: r.message.body,
       createdAt: r.message.createdAt,
       read: r.read,
+      senderType: r.message.driverId ? "DRIVER" : "FIRM",
+      driverName: r.message.driver
+        ? `${r.message.driver.firstName} ${r.message.driver.lastName}`
+        : null,
     }))
   );
 }

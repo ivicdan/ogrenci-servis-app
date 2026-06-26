@@ -60,7 +60,7 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
-  const { driverId, monthlyFee } = await req.json();
+  const { driverId, monthlyFee, serviceStartDate } = await req.json();
 
   const student = await prisma.student.findFirst({ where: { id, firmId: user.id } });
   if (!student) return NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
@@ -75,6 +75,7 @@ export async function PUT(
     data: {
       driverId: driverId !== undefined ? (driverId || null) : undefined,
       ...(monthlyFee !== undefined ? { monthlyFee: monthlyFee === "" ? null : Number(monthlyFee) } : {}),
+      ...(serviceStartDate !== undefined ? { serviceStartDate: serviceStartDate ? new Date(serviceStartDate) : null } : {}),
     },
   });
 

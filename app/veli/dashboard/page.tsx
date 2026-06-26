@@ -20,6 +20,7 @@ interface ParentData {
     school: string;
     class: string;
     studyTime: string;
+    serviceStartDate: string | null;
     driver: {
       firstName: string;
       lastName: string;
@@ -172,6 +173,11 @@ export default function VeliDashboard() {
               <p>👨‍✈️ {student.driver.firstName} {student.driver.lastName}</p>
               {student.driver.assistantName && (
                 <p>👩‍✈️ Hostes: {student.driver.assistantName}</p>
+              )}
+              {student.serviceStartDate && (
+                <p className="text-xs text-green-600 pt-1 border-t border-green-200 mt-1">
+                  📅 Başlangıç: {new Date(student.serviceStartDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
               )}
             </div>
           </div>
