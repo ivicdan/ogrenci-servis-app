@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = requireAuth(req, ["FIRM"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
+  const { id } = await params;
+
   const message = await prisma.message.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { firmId: true },
   });
   if (!message || message.firmId !== user.id)
     return NextResponse.json({ error: "Mesaj bulunamadı." }, { status: 404 });
 
   const unread = await prisma.messageRecipient.findMany({
-    where: { messageId: params.id, read: false },
+    where: { messageId: id, read: false },
     select: { userId: true, userType: true },
   });
 
