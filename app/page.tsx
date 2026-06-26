@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bus, Building2, User, Shield, Bell, MapPin, Smartphone, ChevronRight, CheckCircle } from "lucide-react";
+import { Bus, Building2, User, Shield, Bell, MapPin, Smartphone, ChevronRight, CheckCircle, MessageCircle, Mail, Phone } from "lucide-react";
 
 export default function Home() {
   return (
@@ -231,6 +231,47 @@ export default function Home() {
         </div>
       </section>
 
+      {/* İletişim */}
+      <section id="iletisim" className="py-14 px-4 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">İletişim</h2>
+          <p className="text-center text-gray-500 text-sm mb-10">
+            Sorularınız, kayıt işlemleriniz veya destek için bize ulaşın.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <a
+              href="https://wa.me/905444475096"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 bg-green-50 hover:bg-green-100 border border-green-200 rounded-2xl p-5 transition-colors group"
+            >
+              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:bg-green-600 transition-colors">
+                <MessageCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">WhatsApp</p>
+                <p className="text-green-700 font-mono text-base font-bold">0544 447 50 96</p>
+                <p className="text-xs text-gray-500 mt-0.5">Hızlı yanıt için WhatsApp tercih edin</p>
+              </div>
+            </a>
+
+            <a
+              href="mailto:info@ogrenciservisi.online"
+              className="flex items-center gap-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-2xl p-5 transition-colors group"
+            >
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:bg-blue-700 transition-colors">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">E-posta</p>
+                <p className="text-blue-700 font-medium text-sm">info@ogrenciservisi.online</p>
+                <p className="text-xs text-gray-500 mt-0.5">Evrak ve resmi talepler için</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8 px-4">
         <div className="max-w-5xl mx-auto text-center">
@@ -240,7 +281,18 @@ export default function Home() {
             </div>
             <span className="font-bold text-white text-sm">Öğrenci Servis Yönetim Sistemi</span>
           </div>
-          <p className="text-xs text-gray-500">Tüm hakları saklıdır.</p>
+          <div className="flex items-center justify-center gap-4 mt-3 mb-3">
+            <a href="https://wa.me/905444475096" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-green-400 transition-colors">
+              <Phone className="w-3.5 h-3.5" /> 0544 447 50 96
+            </a>
+            <span className="text-gray-700">·</span>
+            <a href="mailto:info@ogrenciservisi.online"
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-400 transition-colors">
+              <Mail className="w-3.5 h-3.5" /> info@ogrenciservisi.online
+            </a>
+          </div>
+          <p className="text-xs text-gray-600">Tüm hakları saklıdır.</p>
         </div>
       </footer>
     </div>
