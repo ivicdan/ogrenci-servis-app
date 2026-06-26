@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard, Clock } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 import { subscribeToPush } from "@/app/pwa-register";
@@ -17,12 +17,14 @@ const navItems = [
 ];
 
 const PUBLIC_PATHS = ["/firma/giris", "/firma/kayit", "/firma/evrak"];
+const PENDING_STATUSES = ["PRE_REGISTERED", "PENDING_APPROVAL"];
 
 export default function FirmaLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const [unread, setUnread] = useState(0);
+  const [firmStatus, setFirmStatus] = useState<string | null>(null);
   const prevUnread = useRef(-1);
 
   useEffect(() => {
@@ -36,6 +38,13 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
       }
     }
   }, [isPublic, router]);
+
+  useEffect(() => {
+    if (isPublic) return;
+    apiFetch<{ status: string }>("/api/firma/profil").then(({ data }) => {
+      if (data?.status) setFirmStatus(data.status);
+    });
+  }, [isPublic]);
 
   useEffect(() => {
     if (isPublic) return;
@@ -81,6 +90,10 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
     router.push("/firma/giris");
   }
 
+  const isPending = firmStatus !== null && PENDING_STATUSES.includes(firmStatus);
+  // Dashboard kendi pasif modunu gösteriyor — sadece diğer sayfalarda overlay
+  const showOverlay = isPending && !pathname.startsWith("/firma/dashboard");
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 shadow-sm">
@@ -116,6 +129,7 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
         </nav>
         <div className="p-3 border-t border-gray-100">
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
           >
@@ -131,12 +145,49 @@ export default function FirmaLayoutClient({ children }: { children: React.ReactN
             <img src="/icons/icon-firma.svg" alt="Logo" className="w-7 h-7 rounded-full" />
             <span className="font-bold text-gray-900 text-sm">Servis Yönetim</span>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors">
+          <button type="button" onClick={handleLogout} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors">
             <LogOut className="w-4 h-4" />
             <span>Çıkış</span>
           </button>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+
+        {/* Onay bekliyor üst banner (tüm sayfalarda görünür) */}
+        {isPending && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <p className="text-xs text-amber-700 font-medium">
+              Hesabınız onay bekliyor — onay alınana kadar işlem yapılamaz.
+            </p>
+            <Link href="/firma/dashboard" className="ml-auto text-xs text-amber-700 underline underline-offset-2 flex-shrink-0">
+              Detay
+            </Link>
+          </div>
+        )}
+
+        <main className="flex-1 p-4 md:p-6 relative">
+          {children}
+          {/* Overlay: dashboard hariç tüm sayfalarda işlem engellenir */}
+          {showOverlay && (
+            <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[2px] flex items-start justify-center pt-16 pointer-events-auto">
+              <div className="bg-white rounded-2xl shadow-md border border-amber-100 px-6 py-5 mx-4 text-center max-w-xs">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+                <p className="font-semibold text-gray-800 text-sm mb-1">Onay Bekleniyor</p>
+                <p className="text-xs text-gray-500">
+                  Hesabınız onaylandıktan sonra bu bölümü kullanabilirsiniz.
+                </p>
+                <Link
+                  href="/firma/dashboard"
+                  className="mt-3 inline-block text-xs text-blue-600 font-medium hover:underline"
+                >
+                  Dashboard'a Dön
+                </Link>
+              </div>
+            </div>
+          )}
+        </main>
+
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex">
           {navItems.map((item) => {
             const active = pathname.startsWith(item.href);
