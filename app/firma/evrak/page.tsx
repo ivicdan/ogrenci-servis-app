@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 
-const WHATSAPP = "905XXXXXXXXX"; // ← WhatsApp numaranızı girin (başında 90, boşluksuz)
+const WHATSAPP = "905444475096";
 const EMAIL = "info@ogrenciservisi.online";
 
 export default function FirmaEvrak() {
