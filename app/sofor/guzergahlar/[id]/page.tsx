@@ -284,6 +284,14 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
 
   const isDropoffRoute = route.type.includes("DROPOFF");
   const tripStarted = !!route.tripStartedAt;
+  const backHref = `/sofor/guzergahlar?tab=${isDropoffRoute ? "donus" : "gidis"}`;
+
+  const routeTypeLabel: Record<string, string> = {
+    MORNING_PICKUP: "Sabah Gidiş",
+    AFTERNOON_PICKUP: "Öğlen Gidiş",
+    MORNING_DROPOFF: "Öğlen Çıkış",
+    AFTERNOON_DROPOFF: "Akşam Çıkış",
+  };
   const studentMap = Object.fromEntries(allStudents.map((s) => [s.id, s]));
 
   // Start point only makes sense for pickup routes
@@ -296,14 +304,19 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Link href="/sofor/guzergahlar" className="text-gray-400 hover:text-gray-600">
+          <Link href={backHref} className="text-gray-400 hover:text-gray-600">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{route.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-bold text-gray-900">{route.name}</h1>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isDropoffRoute ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"}`}>
+                {isDropoffRoute ? "Eve Dönüş" : "Okula Gidiş"}
+              </span>
+            </div>
             <p className="text-sm text-gray-500 flex items-center gap-1.5">
-              {route.students.length} öğrenci
-              {tripStarted && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">Sefer Aktif</span>}
+              {routeTypeLabel[route.type] ?? route.type} · {route.students.length} öğrenci
+              {tripStarted && <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isDropoffRoute ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"}`}>Sefer Aktif</span>}
             </p>
           </div>
         </div>
