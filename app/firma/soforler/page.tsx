@@ -31,6 +31,7 @@ interface Driver {
   phone: string;
   plateNumber: string | null;
   assistantName: string | null;
+  assistantPhone: string | null;
   status: string;
   _count: { students: number };
 }
@@ -49,7 +50,7 @@ function validateTcId(tc: string) {
 
 const emptyForm = {
   firstName: "", lastName: "", phone: "", tcId: "",
-  plateNumber: "", assistantName: "",
+  plateNumber: "", assistantName: "", assistantPhone: "",
 };
 
 export default function FirmaSoforler() {
@@ -59,6 +60,7 @@ export default function FirmaSoforler() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [newDriver, setNewDriver] = useState<NewDriverResult | null>(null);
+  const [justAddedCredentials, setJustAddedCredentials] = useState<{ id: string; password: string } | null>(null);
 
   useEffect(() => { loadDrivers(); }, []);
 
@@ -71,6 +73,7 @@ export default function FirmaSoforler() {
     e.preventDefault();
     if (!validateTcId(form.tcId)) return toast.error("TC kimlik numarası tam olarak 11 haneli olmalıdır.");
     if (!validatePhone(form.phone)) return toast.error("Telefon numarası 11 haneli ve 0 ile başlamalıdır.");
+    if (form.assistantPhone && !validatePhone(form.assistantPhone)) return toast.error("Hostes telefonu 11 haneli ve 0 ile başlamalıdır.");
     setLoading(true);
     const { data, error } = await apiFetch<NewDriverResult>("/api/firma/soforler", {
       method: "POST",
@@ -80,6 +83,7 @@ export default function FirmaSoforler() {
     if (error) return toast.error(error);
     if (data) {
       setNewDriver(data);
+      setJustAddedCredentials({ id: data.id, password: data.plainPassword });
       setDrivers((prev) => [data, ...prev]);
       setForm(emptyForm);
     }
@@ -198,6 +202,24 @@ export default function FirmaSoforler() {
                 <Label>Hostes Adı Soyadı</Label>
                 <Input placeholder="Opsiyonel" value={form.assistantName} onChange={(e) => setForm({ ...form, assistantName: e.target.value })} className="mt-1" />
               </div>
+              <div>
+                <Label>Hostes Telefonu</Label>
+                <Input
+                  type="tel"
+                  placeholder="05XX XXX XX XX"
+                  value={form.assistantPhone}
+                  onChange={(e) => setForm({ ...form, assistantPhone: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+                  className="mt-1"
+                  inputMode="numeric"
+                  maxLength={11}
+                />
+                {form.assistantPhone.length > 0 && form.assistantPhone[0] !== "0" && (
+                  <p className="text-xs text-red-500 mt-1">İlk rakam 0 olmalıdır.</p>
+                )}
+                {form.assistantPhone.length > 0 && form.assistantPhone[0] === "0" && form.assistantPhone.length < 11 && (
+                  <p className="text-xs text-gray-400 mt-1">{11 - form.assistantPhone.length} rakam daha giriniz.</p>
+                )}
+              </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
                 {loading ? "Ekleniyor..." : "Şoförü Ekle"}
               </Button>
@@ -236,6 +258,20 @@ export default function FirmaSoforler() {
                   </div>
                   {driver.plateNumber && (
                     <p className="text-xs text-gray-500 mt-0.5">🚌 {driver.plateNumber}</p>
+                  )}
+                  {justAddedCredentials?.id === driver.id && (
+                    <div className="flex items-center gap-1.5 mt-1 bg-blue-50 rounded-lg px-2 py-1 w-fit">
+                      <span className="text-xs text-blue-500">Şifre:</span>
+                      <span className="font-mono text-xs font-bold text-blue-700">{justAddedCredentials.password}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(justAddedCredentials.password); toast.success("Şifre kopyalandı!"); }}
+                        className="text-blue-400 hover:text-blue-600"
+                        title="Şifreyi kopyala"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
