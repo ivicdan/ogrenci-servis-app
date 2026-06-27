@@ -33,15 +33,18 @@ export default function VeliKayit() {
     if (form.password !== form.passwordConfirm) return toast.error("Şifreler eşleşmiyor.");
     if (!kvkkChecked) return toast.error("Devam etmek için KVKK metnini onaylamanız gerekmektedir.");
     setLoading(true);
-    const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/kayit", {
+    const { data, error } = await apiFetch<{ token: string; studentId?: string }>("/api/auth/veli/kayit", {
       method: "POST",
       body: JSON.stringify(form),
     });
     setLoading(false);
     if (error) return toast.error(error);
     if (data?.token) {
-      if (typeof window !== "undefined") localStorage.setItem("token", data.token);
-      if (typeof window !== "undefined") localStorage.setItem("userType", "PARENT");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userType", "PARENT");
+        if (data.studentId) localStorage.setItem("veli_student_id", data.studentId);
+      }
       toast.success("Kayıt tamamlandı!");
       router.push("/veli/profil");
     }

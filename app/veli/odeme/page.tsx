@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { getActiveStudentId } from "@/lib/active-student";
 
 interface Payment {
   id: string;
@@ -39,18 +40,28 @@ export default function VeliOdeme() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadPayments();
+    const sid = getActiveStudentId();
+    loadPayments(sid);
     apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
       if (data) {
         if (data.paymentDay) setPaymentDay(data.paymentDay);
-        if (data.student?.firm?.iban) setIban(data.student.firm.iban);
-        if (data.student?.monthlyFee) setMonthlyFee(Number(data.student.monthlyFee));
+        const student = (data.students as any[])?.find((s: any) => s.id === sid) ?? data.students?.[0];
+        if (student?.firm?.iban) setIban(student.firm.iban);
+        if (student?.monthlyFee) setMonthlyFee(Number(student.monthlyFee));
       }
     });
+
+    function onStudentChanged(e: Event) {
+      const detail = (e as CustomEvent<{ studentId: string }>).detail;
+      loadPayments(detail.studentId);
+    }
+    window.addEventListener("veli-student-changed", onStudentChanged);
+    return () => window.removeEventListener("veli-student-changed", onStudentChanged);
   }, []);
 
-  async function loadPayments() {
-    const { data } = await apiFetch<Payment[]>("/api/veli/odeme");
+  async function loadPayments(studentId?: string) {
+    const sid = studentId ?? getActiveStudentId();
+    const { data } = await apiFetch<Payment[]>(`/api/veli/odeme?studentId=${sid}`);
     if (data) setPayments(data);
   }
 
@@ -74,7 +85,7 @@ export default function VeliOdeme() {
     setLoading(true);
     const { error } = await apiFetch("/api/veli/odeme", {
       method: "POST",
-      body: JSON.stringify(payForm),
+      body: JSON.stringify({ ...payForm, studentId: getActiveStudentId() }),
     });
     setLoading(false);
     if (error) return toast.error(error);
@@ -108,6 +119,8 @@ export default function VeliOdeme() {
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm text-blue-900 font-bold">{iban}</span>
             <button
+              type="button"
+              aria-label="IBAN kopyala"
               onClick={() => { navigator.clipboard.writeText(iban); toast.success("IBAN kopyalandı!"); }}
               className="text-blue-400 hover:text-blue-600 flex-shrink-0"
             >
@@ -130,6 +143,7 @@ export default function VeliOdeme() {
               Her ayın <strong className="text-purple-700">{paymentDay}.</strong> günü
             </p>
             <button
+              type="button"
               onClick={() => { setNewDay(String(paymentDay)); setEditingDay(true); }}
               className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors"
             >

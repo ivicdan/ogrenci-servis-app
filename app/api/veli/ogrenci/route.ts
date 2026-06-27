@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   const parent = await prisma.parent.findUnique({
     where: { id: user.id },
     include: {
-      student: {
+      students: {
+        where: { status: "ACTIVE" },
         include: {
           driver: {
             select: {
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        orderBy: { createdAt: "asc" },
       },
     },
   });
@@ -47,6 +49,7 @@ export async function PUT(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const {
+    studentId,
     firstName,
     lastName,
     phone,
@@ -72,12 +75,12 @@ export async function PUT(req: NextRequest) {
     studentPhone,
   } = await req.json();
 
-  const parent = await prisma.parent.findUnique({
-    where: { id: user.id },
-    select: { studentId: true },
-  });
+  // Find which student to update
+  const student = studentId
+    ? await prisma.student.findFirst({ where: { id: studentId, parentId: user.id } })
+    : await prisma.student.findFirst({ where: { parentId: user.id }, orderBy: { createdAt: "asc" } });
 
-  if (!parent) return NextResponse.json({ error: "Veli bulunamadı." }, { status: 404 });
+  if (!student) return NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
 
   const u = (s?: string) => (s ? trUpperCase(s) : s);
 
@@ -102,7 +105,7 @@ export async function PUT(req: NextRequest) {
       },
     }),
     prisma.student.update({
-      where: { id: parent.studentId },
+      where: { id: student.id },
       data: {
         firstName: u(studentFirstName),
         lastName: u(studentLastName),

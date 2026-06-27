@@ -15,7 +15,7 @@ const STORAGE_KEY = "veli_remember";
 function VeliGirisInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [form, setForm] = useState({ studentTcId: "", password: "" });
+  const [form, setForm] = useState({ phone: "", password: "" });
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ function VeliGirisInner() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await apiFetch<{ token: string }>("/api/auth/veli/giris",
+    const { data, error } = await apiFetch<{ token: string; parent?: { students?: Array<{ id: string }> } }>("/api/auth/veli/giris",
       { method: "POST", body: JSON.stringify(form) });
     setLoading(false);
     if (error) return toast.error(error);
@@ -46,6 +46,9 @@ function VeliGirisInner() {
       remember ? localStorage.setItem(STORAGE_KEY, JSON.stringify(form)) : localStorage.removeItem(STORAGE_KEY);
       setToken(data.token);
       setUserType("PARENT");
+      // İlk öğrencinin ID'sini aktif öğrenci olarak kaydet
+      const firstStudentId = data.parent?.students?.[0]?.id;
+      if (firstStudentId) localStorage.setItem("veli_student_id", firstStudentId);
       router.push("/veli/dashboard");
     }
   }
@@ -57,16 +60,16 @@ function VeliGirisInner() {
           <img src="/logo.svg" alt="ogrenciservisi.online" className="w-32 h-auto" />
         </div>
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">Veli Girişi</h1>
-        <p className="text-center text-gray-500 text-sm mb-6">Öğrenci TC kimlik numaranızla giriş yapın</p>
+        <p className="text-center text-gray-500 text-sm mb-6">Telefon numaranızla giriş yapın</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="studentTcId">Öğrenci TC Kimlik No</Label>
+            <Label htmlFor="phone">Telefon Numarası</Label>
             <Input
-              id="studentTcId"
-              placeholder="11 haneli TC kimlik numarası"
-              value={form.studentTcId}
-              onChange={(e) => setForm({ ...form, studentTcId: e.target.value.replace(/\D/g, "").slice(0, 11) })}
+              id="phone"
+              placeholder="05XX XXX XX XX"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 11) })}
               inputMode="numeric"
               maxLength={11}
               required

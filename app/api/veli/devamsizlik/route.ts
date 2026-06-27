@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
-  const { type, startDate, endDate } = await req.json();
+  const { type, startDate, endDate, studentId } = await req.json();
 
   if (!type || !["PICKUP", "DROPOFF", "BOTH"].includes(type)) {
     return NextResponse.json({ error: "Geçersiz devamsızlık türü." }, { status: 400 });
@@ -26,37 +26,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Geçersiz tarih aralığı." }, { status: 400 });
   }
 
-  const parent = await prisma.parent.findUnique({
-    where: { id: user.id },
-    include: {
-      student: {
-        include: { driver: { select: { id: true, firstName: true, lastName: true } } },
-      },
+  const student = await prisma.student.findFirst({
+    where: {
+      parentId: user.id,
+      status: "ACTIVE",
+      ...(studentId ? { id: studentId } : {}),
     },
+    include: { driver: { select: { id: true, firstName: true, lastName: true } } },
   });
 
-  if (!parent?.student) {
+  if (!student) {
     return NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
   }
-
-  const { student } = parent;
 
   if (!student.driver) {
     return NextResponse.json({ error: "Öğrenciye henüz şoför atanmamış." }, { status: 400 });
   }
 
-  // Tarih aralığı devamsızlık kaydı oluştur
   await (prisma as any).absenceReport.create({
     data: {
       studentId: student.id,
-      parentId: parent.id,
+      parentId: user.id,
       startDate: start,
       endDate: end,
       type,
     },
   });
 
-  // Eğer bugün aralık içindeyse aynı zamanda anlık bildirim gönder
   const today = new Date();
   if (today >= start && today <= end) {
     const types = type === "BOTH" ? ["PICKUP", "DROPOFF"] : [type];
@@ -93,12 +89,6 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
-
-  const parent = await prisma.parent.findUnique({
-    where: { id: user.id },
-    select: { studentId: true },
-  });
-  if (!parent) return NextResponse.json({ error: "Veli bulunamadı." }, { status: 404 });
 
   const reports = await (prisma as any).absenceReport.findMany({
     where: { parentId: user.id },

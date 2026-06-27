@@ -9,10 +9,11 @@ export async function GET(req: NextRequest) {
   const today = new Date();
   const cutoff = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000);
 
+  // Ödeme günü belirlenmiş, bu firmaya ait aktif öğrencisi olan veliler
   const parents = await prisma.parent.findMany({
     where: {
       paymentDay: { not: null },
-      student: { firmId: user.id, status: "ACTIVE" },
+      students: { some: { firmId: user.id, status: "ACTIVE" } },
     },
     select: {
       id: true,
@@ -20,7 +21,8 @@ export async function GET(req: NextRequest) {
       lastName: true,
       phone: true,
       paymentDay: true,
-      student: {
+      students: {
+        where: { firmId: user.id, status: "ACTIVE" },
         select: {
           id: true,
           firstName: true,
@@ -39,21 +41,24 @@ export async function GET(req: NextRequest) {
   });
 
   const overdue = parents
-    .filter((p) => {
+    .flatMap((p) =>
+      p.students.map((student) => ({ p, student }))
+    )
+    .filter(({ p, student }) => {
       const payDay = p.paymentDay!;
       const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
       const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      return diffDays >= 5 && p.student.payments.length === 0;
+      return diffDays >= 5 && student.payments.length === 0;
     })
-    .map((p) => {
+    .map(({ p, student }) => {
       const payDay = p.paymentDay!;
       const dueDate = new Date(today.getFullYear(), today.getMonth(), payDay);
       const daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       return {
         parentId: p.id,
         parentName: `${p.firstName} ${p.lastName}`,
-        studentId: p.student.id,
-        studentName: `${p.student.firstName} ${p.student.lastName}`,
+        studentId: student.id,
+        studentName: `${student.firstName} ${student.lastName}`,
         paymentDay: payDay,
         daysLate,
       };

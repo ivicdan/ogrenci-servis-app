@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { getActiveStudentId } from "@/lib/active-student";
 
 const MapPicker = dynamic(() => import("@/components/map-picker"), { ssr: false });
 const MapView = dynamic(() => import("@/components/map-view"), { ssr: false });
@@ -125,14 +126,20 @@ function VeliProfilInner() {
   const isEdit = searchParams.get("edit") === "true";
 
   const [form, setForm] = useState<Record<string, string>>({});
+  const [activeStudentId, setActiveStudentIdLocal] = useState<string>("");
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [extraContacts, setExtraContacts] = useState<ExtraContact[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const sid = getActiveStudentId();
+    setActiveStudentIdLocal(sid);
+
     apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
       if (!data) return;
+      const student = (data.students as any[])?.find((s: any) => s.id === sid) ?? data.students?.[0];
+      if (student?.id) setActiveStudentIdLocal(student.id);
       setForm({
         firstName: data.firstName ?? "",
         lastName: data.lastName ?? "",
@@ -145,24 +152,22 @@ function VeliProfilInner() {
         spouseProfession: data.spouseProfession ?? "",
         spouseRelation: data.spouseRelation ?? "",
         parentRelation: data.parentRelation ?? "",
-        studentFirstName: data.student?.firstName ?? "",
-        studentLastName: data.student?.lastName ?? "",
-        studentBirthDate: data.student?.birthDate ? data.student.birthDate.slice(0, 10) : "",
-        studentSchool: data.student?.school ?? "",
-        studentClass: data.student?.class ?? "",
-        studentTeacher: data.student?.teacher ?? "",
-        studentPhone: data.student?.phone ?? "",
-        studentStudyTime: data.student?.studyTime ?? "MORNING",
-        studentSchoolType: data.student?.schoolType ?? "",
+        studentFirstName: student?.firstName ?? "",
+        studentLastName: student?.lastName ?? "",
+        studentBirthDate: student?.birthDate ? student.birthDate.slice(0, 10) : "",
+        studentSchool: student?.school ?? "",
+        studentClass: student?.class ?? "",
+        studentTeacher: student?.teacher ?? "",
+        studentPhone: student?.phone ?? "",
+        studentStudyTime: student?.studyTime ?? "MORNING",
+        studentSchoolType: student?.schoolType ?? "",
       });
       if (data.pickupLat) setPickupLat(data.pickupLat);
       if (data.pickupLng) setPickupLng(data.pickupLng);
 
-      // Mevcut ekstra kişileri yükle (yeni format: extraContacts Json)
       if (Array.isArray(data.extraContacts) && data.extraContacts.length > 0) {
         setExtraContacts(data.extraContacts);
       } else if (data.extraPhone) {
-        // Eski format geriye dönük uyumluluk
         setExtraContacts([{ phone: data.extraPhone, relation: data.extraPhoneRelation ?? "", firstName: "", lastName: "" }]);
       }
     });
@@ -184,6 +189,7 @@ function VeliProfilInner() {
       method: "PUT",
       body: JSON.stringify({
         ...form,
+        studentId: activeStudentId,
         pickupLat,
         pickupLng,
         extraContacts: extraContacts.filter(c => c.phone || c.firstName),
@@ -331,6 +337,7 @@ function VeliProfilInner() {
               <div key={idx} className="bg-gray-50 rounded-xl p-4 space-y-3 relative">
                 <button
                   type="button"
+                  aria-label="Kişiyi kaldır"
                   onClick={() => removeContact(idx)}
                   className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                 >

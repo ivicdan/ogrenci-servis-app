@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       token,
-      parent: { id: parent.id, phone: parent.phone, studentId: parent.studentId },
+      parent: { id: parent.id, phone: parent.phone },
     });
   } catch {
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });

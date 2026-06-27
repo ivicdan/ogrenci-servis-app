@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { getActiveStudentId } from "@/lib/active-student";
 
 interface AbsenceReport {
   id: string;
@@ -56,7 +57,7 @@ export default function VeliDevamsizlik() {
     setLoading(selectedType);
     const { error } = await apiFetch("/api/veli/devamsizlik", {
       method: "POST",
-      body: JSON.stringify({ type: selectedType, startDate, endDate }),
+      body: JSON.stringify({ type: selectedType, startDate, endDate, studentId: getActiveStudentId() }),
     });
     setLoading(null);
     if (error) return toast.error(error);

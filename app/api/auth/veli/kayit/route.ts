@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tüm alanlar zorunludur." }, { status: 400 });
     }
 
-    // Server-side validasyon
     const phoneDigits = phone.replace(/[\s\-]/g, "");
     if (!/^\d{11}$/.test(phoneDigits) || phoneDigits[0] !== "0") {
       return NextResponse.json({ error: "Telefon 11 haneli ve 0 ile başlamalıdır." }, { status: 400 });
@@ -44,13 +43,12 @@ export async function POST(req: NextRequest) {
     }
 
     const existingStudent = await prisma.student.findFirst({
-      where: { tcId: studentTcId, status: "ACTIVE" },
-      include: { firm: { select: { firmCode: true } } },
+      where: { tcId: studentTcId, firmId: firm.id, status: "ACTIVE" },
     });
 
-    if (existingStudent && existingStudent.firmId !== firm.id) {
+    if (existingStudent?.parentId) {
       return NextResponse.json(
-        { error: `Bu TC kimlik numarası başka bir firmada (${existingStudent.firm.firmCode}) aktif öğrenci olarak kayıtlı.` },
+        { error: "Bu öğrenciye ait bir veli kaydı zaten mevcut. Giriş yapmayı deneyin." },
         { status: 409 }
       );
     }
@@ -60,50 +58,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Bu telefon numarası zaten kayıtlı." }, { status: 409 });
     }
 
-    let student = existingStudent;
-    if (!student) {
-      student = await prisma.student.create({
-        data: {
-          tcId: studentTcId,
-          firmId: firm.id,
-          firstName: "",
-          lastName: "",
-          birthDate: new Date(),
-          school: "",
-          class: "",
-          studyTime: "MORNING",
-        },
-        include: { firm: { select: { firmCode: true } } },
-      });
-    }
-
-    const studentParent = await prisma.parent.findUnique({ where: { studentId: student.id } });
-    if (studentParent) {
-      return NextResponse.json(
-        { error: "Bu öğrenciye ait bir veli kaydı zaten mevcut. Giriş yapmayı deneyin." },
-        { status: 409 }
-      );
-    }
-
     const hashed = await bcrypt.hash(password, 10);
 
-    const parent = await prisma.parent.create({
-      data: {
-        studentId: student.id,
-        firstName: "",
-        lastName: "",
-        phone: phoneDigits,
-        password: hashed,
-        address: "",
-        phoneVerified: true,
-        kvkkAccepted: true,
-        kvkkAcceptedAt: new Date(),
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const parent = await tx.parent.create({
+        data: {
+          firstName: "",
+          lastName: "",
+          phone: phoneDigits,
+          password: hashed,
+          address: "",
+          phoneVerified: true,
+          kvkkAccepted: true,
+          kvkkAcceptedAt: new Date(),
+        },
+      });
+
+      let studentId: string;
+      if (existingStudent) {
+        await tx.student.update({ where: { id: existingStudent.id }, data: { parentId: parent.id } });
+        studentId = existingStudent.id;
+      } else {
+        const newStudent = await tx.student.create({
+          data: {
+            tcId: studentTcId,
+            firmId: firm.id,
+            parentId: parent.id,
+            firstName: "",
+            lastName: "",
+            birthDate: new Date(),
+            school: "",
+            class: "",
+            studyTime: "MORNING",
+          },
+        });
+        studentId = newStudent.id;
+      }
+
+      return { parentId: parent.id, studentId };
     });
 
-    const token = signToken({ id: parent.id, userType: "PARENT" });
-
-    return NextResponse.json({ token, studentId: student.id }, { status: 201 });
+    const token = signToken({ id: result.parentId, userType: "PARENT" });
+    return NextResponse.json({ token, studentId: result.studentId }, { status: 201 });
   } catch (e) {
     console.error("[veli/kayit]", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });

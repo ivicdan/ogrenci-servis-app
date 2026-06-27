@@ -42,57 +42,63 @@ export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const studentId = searchParams.get("studentId") || null;
+
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   const parent = await prisma.parent.findUnique({
     where: { id: user.id },
+    select: { pickupLat: true, pickupLng: true },
+  });
+
+  const student = await prisma.student.findFirst({
+    where: {
+      parentId: user.id,
+      status: "ACTIVE",
+      ...(studentId ? { id: studentId } : {}),
+    },
     select: {
-      pickupLat: true,
-      pickupLng: true,
-      student: {
+      id: true,
+      routeId: true,
+      routeOrder: true,
+      dropoffRouteId: true,
+      dropoffRouteOrder: true,
+      driverId: true,
+      driver: {
         select: {
           id: true,
-          routeId: true,
-          routeOrder: true,
-          dropoffRouteId: true,
-          dropoffRouteOrder: true,
-          driverId: true,
-          driver: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              plateNumber: true,
-              currentLat: true,
-              currentLng: true,
-              locationUpdatedAt: true,
-              routes: {
-                where: { tripStartedAt: { gte: todayStart } },
-                select: { id: true, name: true, type: true, tripStartedAt: true },
-                orderBy: { tripStartedAt: "desc" },
-                take: 1,
-              },
-            },
+          firstName: true,
+          lastName: true,
+          plateNumber: true,
+          currentLat: true,
+          currentLng: true,
+          locationUpdatedAt: true,
+          routes: {
+            where: { tripStartedAt: { gte: todayStart } },
+            select: { id: true, name: true, type: true, tripStartedAt: true },
+            orderBy: { tripStartedAt: "desc" },
+            take: 1,
           },
         },
       },
     },
+    orderBy: { createdAt: "asc" },
   });
 
-  if (!parent?.student?.driver) return NextResponse.json({ tripActive: false });
+  if (!parent || !student?.driver) return NextResponse.json({ tripActive: false });
 
-  const driver = parent.student.driver;
+  const driver = student.driver;
   const activeRoute = driver.routes[0] ?? null;
   if (!activeRoute) return NextResponse.json({ tripActive: false });
 
   const isDropoff = activeRoute.type.includes("DROPOFF");
-  const myStudentId = parent.student.id;
-  const myOrder = isDropoff ? parent.student.dropoffRouteOrder : parent.student.routeOrder;
-  const myRouteId = isDropoff ? parent.student.dropoffRouteId : parent.student.routeId;
+  const myStudentId = student.id;
+  const myOrder = isDropoff ? student.dropoffRouteOrder : student.routeOrder;
+  const myRouteId = isDropoff ? student.dropoffRouteId : student.routeId;
   const onActiveRoute = myRouteId === activeRoute.id;
 
-  // Öğrenci bugün zaten alındıysa velinin haritasını kapat
   const pickedUp = await prisma.attendance.findFirst({
     where: {
       studentId: myStudentId,
@@ -111,7 +117,6 @@ export async function GET(req: NextRequest) {
     const waypoints: [number, number][] = [[driver.currentLat, driver.currentLng]];
 
     if (onActiveRoute) {
-      // Rotadaki diğer öğrencileri güzergah sırasına göre çek
       const routeStudents = await prisma.student.findMany({
         where: isDropoff
           ? { dropoffRouteId: activeRoute.id, status: "ACTIVE" }
@@ -138,10 +143,9 @@ export async function GET(req: NextRequest) {
 
       for (const s of routeStudents) {
         const order = isDropoff ? s.dropoffRouteOrder : s.routeOrder;
-        if (order > myOrder) break; // Bu velinin durağından sonraki durağa gerek yok
+        if (order > myOrder) break;
 
         const status = s.attendances[0]?.status ?? "PENDING";
-        // Zaten alınmış veya gelmeyecek ise atla
         if (status === "PICKED_UP" || status === "ABSENT" || status === "NOTIFIED_ABSENT") continue;
 
         const stopLat = s.id === myStudentId ? parent.pickupLat : s.parent?.pickupLat;
@@ -152,7 +156,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Ara durak eklenmediyse direkt velinin konumuna git
     if (waypoints.length === 1 && parent.pickupLat != null && parent.pickupLng != null) {
       waypoints.push([parent.pickupLat, parent.pickupLng]);
     }
@@ -165,8 +168,10 @@ export async function GET(req: NextRequest) {
         routeGeometry = osrm.geometry;
       } else if (parent.pickupLat != null && parent.pickupLng != null) {
         const dist = haversineMeters(
-          driver.currentLat, driver.currentLng,
-          parent.pickupLat, parent.pickupLng
+          driver.currentLat,
+          driver.currentLng,
+          parent.pickupLat,
+          parent.pickupLng
         );
         distanceMeters = Math.round(dist);
         etaMinutes = Math.max(1, Math.round((dist / 1000 / 30) * 60));

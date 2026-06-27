@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { rateLimit, ipKey } from "@/lib/rate-limit";
 
-const GENERIC_ERROR = "TC kimlik no veya şifre hatalı.";
+const GENERIC_ERROR = "Telefon numarası veya şifre hatalı.";
 const DUMMY_HASH = "$2a$10$dummyhashfortimingattackpreventiononlyxxxxxxxxxxxxxxxx";
 
 export async function POST(req: NextRequest) {
@@ -18,30 +18,33 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { studentTcId, password } = await req.json();
+    const { phone, password } = await req.json();
 
-    if (!studentTcId || !password) {
+    if (!phone || !password) {
       return NextResponse.json({ error: "Tüm alanlar zorunludur." }, { status: 400 });
     }
 
-    const student = await prisma.student.findFirst({
-      where: { tcId: studentTcId, status: "ACTIVE" },
-    });
+    const phoneDigits = phone.replace(/[\s\-]/g, "");
 
-    const parent = student
-      ? await prisma.parent.findUnique({
-          where: { studentId: student.id },
+    const parent = await prisma.parent.findUnique({
+      where: { phone: phoneDigits },
+      include: {
+        students: {
+          where: { status: "ACTIVE" },
           include: {
-            student: { select: { id: true, firstName: true, lastName: true, firmId: true } },
+            firm: { select: { id: true, firmCode: true, name: true } },
+            driver: { select: { id: true, firstName: true, lastName: true } },
           },
-        })
-      : null;
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
 
     const valid = parent
       ? await bcrypt.compare(password, parent.password)
       : await bcrypt.compare(password, DUMMY_HASH).then(() => false);
 
-    if (!student || !parent || !valid) {
+    if (!parent || !valid) {
       return NextResponse.json({ error: GENERIC_ERROR }, { status: 401 });
     }
 
@@ -56,7 +59,7 @@ export async function POST(req: NextRequest) {
         firstName: parent.firstName,
         lastName: parent.lastName,
         phone: parent.phone,
-        student: parent.student,
+        students: parent.students,
       },
     });
   } catch (e) {

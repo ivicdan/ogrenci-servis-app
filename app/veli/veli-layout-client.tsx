@@ -2,8 +2,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, User, CreditCard, Bell, LogOut, AlertTriangle, MessageSquare } from "lucide-react";
+import { LayoutDashboard, User, CreditCard, Bell, LogOut, AlertTriangle, MessageSquare, ChevronDown } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
+import { setActiveStudentId } from "@/lib/active-student";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 import { subscribeToPush } from "@/app/pwa-register";
 
@@ -18,6 +19,12 @@ const navItems = [
 
 const PUBLIC_PATHS = ["/veli/giris", "/veli/kayit"];
 
+interface StudentSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export default function VeliLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -26,6 +33,8 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
   const [unreadMsg, setUnreadMsg] = useState(0);
   const prevUnread = useRef(-1);
   const prevUnreadMsg = useRef(-1);
+  const [students, setStudents] = useState<StudentSummary[]>([]);
+  const [activeStudentId, setActiveLocal] = useState<string>("");
 
   useEffect(() => {
     if (!isPublic && getUserType() !== "PARENT") {
@@ -35,6 +44,32 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
       subscribeToPush();
     }
   }, [isPublic, router]);
+
+  // Öğrenci listesini çek ve aktif öğrenciyi belirle
+  useEffect(() => {
+    if (isPublic) return;
+    apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
+      if (!data?.students?.length) return;
+      const list: StudentSummary[] = data.students.map((s: any) => ({
+        id: s.id,
+        firstName: s.firstName || "Öğrenci",
+        lastName: s.lastName || "",
+      }));
+      setStudents(list);
+      const stored = localStorage.getItem("veli_student_id");
+      const active = list.find((s) => s.id === stored) ?? list[0];
+      setActiveLocal(active.id);
+      if (!stored || stored !== active.id) {
+        localStorage.setItem("veli_student_id", active.id);
+      }
+    });
+  }, [isPublic]);
+
+  function switchStudent(id: string) {
+    setActiveLocal(id);
+    setActiveStudentId(id);
+    window.dispatchEvent(new CustomEvent("veli-student-changed", { detail: { studentId: id } }));
+  }
 
   // Bildirim polling
   useEffect(() => {
@@ -144,6 +179,23 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
             <img src="/icons/icon-veli.svg" alt="Logo" className="w-9 h-9 rounded-full" />
             <span className="font-bold text-gray-900 text-sm leading-tight">Veli<br/>Paneli</span>
           </div>
+          {students.length > 1 && (
+            <div className="mt-3 relative">
+              <select
+                aria-label="Aktif öğrenci seç"
+                value={activeStudentId}
+                onChange={(e) => switchStudent(e.target.value)}
+                className="w-full appearance-none text-xs rounded-xl border border-gray-200 pl-2.5 pr-7 py-1.5 text-gray-700 focus:outline-none focus:border-purple-300 bg-gray-50 cursor-pointer"
+              >
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+            </div>
+          )}
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map((item) => {
@@ -180,12 +232,30 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
       </aside>
 
       <div className="flex-1 flex flex-col">
-        <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="/icons/icon-veli.svg" alt="Logo" className="w-7 h-7 rounded-full" />
-            <span className="font-bold text-gray-900 text-sm">Veli Paneli</span>
+        <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <img src="/icons/icon-veli.svg" alt="Logo" className="w-7 h-7 rounded-full flex-shrink-0" />
+            {students.length > 1 ? (
+              <div className="relative min-w-0">
+                <select
+                  aria-label="Aktif öğrenci seç"
+                  value={activeStudentId}
+                  onChange={(e) => switchStudent(e.target.value)}
+                  className="appearance-none text-xs font-semibold rounded-lg border border-gray-200 pl-2 pr-6 py-1.5 text-gray-800 focus:outline-none focus:border-purple-300 bg-gray-50 cursor-pointer max-w-[160px] truncate"
+                >
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.firstName} {s.lastName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+              </div>
+            ) : (
+              <span className="font-bold text-gray-900 text-sm">Veli Paneli</span>
+            )}
           </div>
-          <button type="button" onClick={() => { clearToken(); router.push("/veli/giris"); }} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors">
+          <button type="button" onClick={() => { clearToken(); router.push("/veli/giris"); }} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors flex-shrink-0">
             <LogOut className="w-4 h-4" />
             <span>Çıkış</span>
           </button>
