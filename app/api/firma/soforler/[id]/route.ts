@@ -24,6 +24,7 @@ export async function GET(
       tcId: true,
       plateNumber: true,
       assistantName: true,
+      assistantPhone: true,
       status: true,
       createdAt: true,
       _count: { select: { students: true, routes: true } },
@@ -57,7 +58,7 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
-  const { firstName, lastName, phone, plateNumber, assistantName, status } =
+  const { firstName, lastName, phone, plateNumber, assistantName, assistantPhone, status } =
     await req.json();
 
   const driver = await prisma.driver.findFirst({
@@ -74,6 +75,7 @@ export async function PUT(
       phone,
       plateNumber,
       assistantName: assistantName ? trUpperCase(assistantName) : assistantName,
+      assistantPhone: assistantPhone || null,
       status,
     },
   });

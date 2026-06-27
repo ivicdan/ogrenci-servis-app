@@ -29,6 +29,7 @@ interface StudentInfo {
     phone: string;
     plateNumber: string | null;
     assistantName: string | null;
+    assistantPhone: string | null;
   } | null;
   firm: {
     name: string | null;
@@ -269,7 +270,12 @@ export default function VeliDashboard() {
                 </div>
                 <p>👨‍✈️ {student.driver.firstName} {student.driver.lastName}</p>
                 {student.driver.assistantName && (
-                  <p>👩‍✈️ Hostes: {student.driver.assistantName}</p>
+                  <p className="flex items-center gap-2 flex-wrap">
+                    👩‍✈️ Hostes: {student.driver.assistantName}
+                    {student.driver.assistantPhone && (
+                      <CopyPhone phone={student.driver.assistantPhone} className="text-xs text-green-700" />
+                    )}
+                  </p>
                 )}
                 {student.serviceStartDate && (
                   <p className="text-xs text-green-600 pt-1 border-t border-green-200 mt-1">

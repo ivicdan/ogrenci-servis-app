@@ -22,7 +22,7 @@ const routeTypeLabel: Record<string, string> = {
 interface DriverDetail {
   id: string; driverCode: string; firstName: string; lastName: string;
   phone: string; tcId: string; plateNumber: string | null;
-  assistantName: string | null; status: string; createdAt: string;
+  assistantName: string | null; assistantPhone: string | null; status: string; createdAt: string;
   _count: { students: number; routes: number };
   students: {
     id: string; firstName: string; lastName: string; school: string;
@@ -39,7 +39,7 @@ export default function SoforDetay() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", phone: "", plateNumber: "", assistantName: "" });
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", phone: "", plateNumber: "", assistantName: "", assistantPhone: "" });
   const [saving, setSaving] = useState(false);
   const [resetPassword, setResetPassword] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
@@ -53,6 +53,7 @@ export default function SoforDetay() {
             firstName: data.firstName, lastName: data.lastName,
             phone: data.phone, plateNumber: data.plateNumber ?? "",
             assistantName: data.assistantName ?? "",
+            assistantPhone: data.assistantPhone ?? "",
           });
         }
       })
@@ -70,7 +71,7 @@ export default function SoforDetay() {
     if (error) return toast.error(error);
     toast.success("Bilgiler güncellendi!");
     setEditOpen(false);
-    if (driver) setDriver({ ...driver, ...editForm, plateNumber: editForm.plateNumber || null, assistantName: editForm.assistantName || null });
+    if (driver) setDriver({ ...driver, ...editForm, plateNumber: editForm.plateNumber || null, assistantName: editForm.assistantName || null, assistantPhone: editForm.assistantPhone || null });
   }
 
   async function handleResetPassword() {
@@ -138,6 +139,10 @@ export default function SoforDetay() {
             <div>
               <Label>Hostes Adı</Label>
               <Input value={editForm.assistantName} onChange={(e) => setEditForm({ ...editForm, assistantName: e.target.value })} className="mt-1" />
+            </div>
+            <div>
+              <Label>Hostes Telefonu</Label>
+              <Input type="tel" placeholder="05XX XXX XX XX" value={editForm.assistantPhone} onChange={(e) => setEditForm({ ...editForm, assistantPhone: e.target.value })} className="mt-1" />
             </div>
             <div className="flex gap-2 pt-1">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setEditOpen(false)}>İptal</Button>
@@ -211,7 +216,14 @@ export default function SoforDetay() {
             <div className="mt-3 space-y-1 text-sm text-gray-600">
               <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> <CopyPhone phone={driver.phone} /></p>
               {driver.plateNumber && <p>🚌 Plaka: {driver.plateNumber}</p>}
-              {driver.assistantName && <p>👤 Hostes: {driver.assistantName}</p>}
+              {driver.assistantName && (
+                <p className="flex items-center gap-2">
+                  👤 Hostes: {driver.assistantName}
+                  {driver.assistantPhone && (
+                    <> · <CopyPhone phone={driver.assistantPhone} /></>
+                  )}
+                </p>
+              )}
               <p className="text-xs text-gray-400">Kayıt: {new Date(driver.createdAt).toLocaleDateString("tr-TR")}</p>
             </div>
           </div>

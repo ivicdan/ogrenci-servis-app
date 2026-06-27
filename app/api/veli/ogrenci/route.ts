@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
               phone: true,
               plateNumber: true,
               assistantName: true,
+              assistantPhone: true,
               driverCode: true,
             },
           },

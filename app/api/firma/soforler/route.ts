@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       phone: true,
       plateNumber: true,
       assistantName: true,
+      assistantPhone: true,
       status: true,
       createdAt: true,
       _count: { select: { students: true } },
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
-  const { firstName, lastName, phone, tcId, plateNumber, assistantName } =
+  const { firstName, lastName, phone, tcId, plateNumber, assistantName, assistantPhone } =
     await req.json();
 
   if (!firstName || !lastName || !phone || !tcId) {
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
       tcId,
       plateNumber,
       assistantName: assistantName ? trUpperCase(assistantName) : assistantName,
+      assistantPhone: assistantPhone || null,
       firmId: user.id,
       password: hashedPassword,
     },
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
       phone: true,
       plateNumber: true,
       assistantName: true,
+      assistantPhone: true,
       status: true,
     },
   });
