@@ -91,20 +91,20 @@ export default function SoforDashboard() {
       </div>
 
       {/* Sekmeler */}
-      <div className="flex bg-gray-100 rounded-2xl p-1 mb-5 gap-1">
+      <div className={`flex rounded-2xl p-1 mb-5 gap-1 transition-colors duration-300 ${tab === "gidis" ? "bg-green-100" : "bg-purple-100"}`}>
         <button
           type="button"
           onClick={() => setTab("gidis")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
             tab === "gidis"
-              ? "bg-white text-green-700 shadow-sm"
+              ? "bg-green-500 text-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
           <School className="w-4 h-4" />
           Okula Gidiş
           {gidisRoutes.length > 0 && (
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === "gidis" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-500"}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === "gidis" ? "bg-white/30 text-white" : "bg-gray-200 text-gray-500"}`}>
               {gidisRoutes.length}
             </span>
           )}
@@ -112,16 +112,16 @@ export default function SoforDashboard() {
         <button
           type="button"
           onClick={() => setTab("donus")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
             tab === "donus"
-              ? "bg-white text-purple-700 shadow-sm"
+              ? "bg-purple-500 text-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
           <Home className="w-4 h-4" />
           Eve Dönüş
           {donusRoutes.length > 0 && (
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === "donus" ? "bg-purple-100 text-purple-700" : "bg-gray-200 text-gray-500"}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === "donus" ? "bg-white/30 text-white" : "bg-gray-200 text-gray-500"}`}>
               {donusRoutes.length}
             </span>
           )}
