@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import SifreDegistir from "@/components/sifre-degistir";
 
 interface FirmProfile {
   id: string;
@@ -151,6 +152,8 @@ export default function FirmaAyarlar() {
           </div>
         </form>
       )}
+
+      <SifreDegistir endpoint="/api/firma/sifre-degistir" />
     </div>
   );
 }

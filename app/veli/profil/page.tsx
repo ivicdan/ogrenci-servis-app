@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { getActiveStudentId, setActiveStudentId } from "@/lib/active-student";
+import SifreDegistir from "@/components/sifre-degistir";
 
 const MapPicker = dynamic(() => import("@/components/map-picker"), { ssr: false });
 const MapView = dynamic(() => import("@/components/map-view"), { ssr: false });
@@ -506,6 +507,8 @@ function VeliProfilInner() {
           <Link href="/veli/profil?edit=true" className="text-purple-600 font-medium">Bilgileri Ekle</Link>
         </div>
       )}
+
+      <SifreDegistir endpoint="/api/veli/sifre-degistir" />
     </div>
   );
 }

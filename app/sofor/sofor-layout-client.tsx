@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Bus, Bell, LogOut, GraduationCap, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Bus, Bell, LogOut, GraduationCap, MessageSquare, Settings } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 import { subscribeToPush } from "@/app/pwa-register";
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/sofor/ogrenciler", label: "Öğrencilerim", icon: GraduationCap },
   { href: "/sofor/bildirimler", label: "Bildirimler", icon: Bell, badgeKey: "notif" },
   { href: "/sofor/mesajlar", label: "Mesajlar", icon: MessageSquare, badgeKey: "msg" },
+  { href: "/sofor/ayarlar", label: "Ayarlar", icon: Settings },
 ];
 
 const PUBLIC_PATHS = ["/sofor/giris"];
