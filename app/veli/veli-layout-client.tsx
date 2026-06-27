@@ -65,11 +65,39 @@ export default function VeliLayoutClient({ children }: { children: React.ReactNo
     });
   }, [isPublic]);
 
+  function fetchStudentList(keepActiveId?: string) {
+    apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
+      if (!data?.students?.length) return;
+      const list: StudentSummary[] = data.students.map((s: any) => ({
+        id: s.id,
+        firstName: s.firstName || "Öğrenci",
+        lastName: s.lastName || "",
+      }));
+      setStudents(list);
+      // Aktif öğrenciyi koru; listede yoksa ilkini seç
+      const target = keepActiveId ?? localStorage.getItem("veli_student_id") ?? "";
+      const active = list.find((s) => s.id === target) ?? list[0];
+      setActiveLocal(active.id);
+      localStorage.setItem("veli_student_id", active.id);
+    });
+  }
+
   function switchStudent(id: string) {
     setActiveLocal(id);
     setActiveStudentId(id);
     window.dispatchEvent(new CustomEvent("veli-student-changed", { detail: { studentId: id } }));
   }
+
+  // Yeni öğrenci eklenince listeyi yenile
+  useEffect(() => {
+    if (isPublic) return;
+    function onStudentsUpdated(e: Event) {
+      const newId = (e as CustomEvent<{ studentId?: string }>).detail?.studentId;
+      fetchStudentList(newId);
+    }
+    window.addEventListener("veli-students-updated", onStudentsUpdated);
+    return () => window.removeEventListener("veli-students-updated", onStudentsUpdated);
+  }, [isPublic]);
 
   // Bildirim polling
   useEffect(() => {

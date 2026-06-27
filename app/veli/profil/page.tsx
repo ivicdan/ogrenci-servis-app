@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
-import { getActiveStudentId } from "@/lib/active-student";
+import { getActiveStudentId, setActiveStudentId } from "@/lib/active-student";
 
 const MapPicker = dynamic(() => import("@/components/map-picker"), { ssr: false });
 const MapView = dynamic(() => import("@/components/map-view"), { ssr: false });
@@ -127,10 +127,29 @@ function VeliProfilInner() {
 
   const [form, setForm] = useState<Record<string, string>>({});
   const [activeStudentId, setActiveStudentIdLocal] = useState<string>("");
+  const [allStudents, setAllStudents] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [extraContacts, setExtraContacts] = useState<ExtraContact[]>([]);
   const [loading, setLoading] = useState(false);
+
+  function loadStudentData(sid: string, data: any) {
+    const student = (data.students as any[])?.find((s: any) => s.id === sid) ?? data.students?.[0];
+    if (!student) return;
+    setActiveStudentIdLocal(student.id);
+    setForm((prev) => ({
+      ...prev,
+      studentFirstName: student.firstName ?? "",
+      studentLastName: student.lastName ?? "",
+      studentBirthDate: student.birthDate ? student.birthDate.slice(0, 10) : "",
+      studentSchool: student.school ?? "",
+      studentClass: student.class ?? "",
+      studentTeacher: student.teacher ?? "",
+      studentPhone: student.phone ?? "",
+      studentStudyTime: student.studyTime ?? "MORNING",
+      studentSchoolType: student.schoolType ?? "",
+    }));
+  }
 
   useEffect(() => {
     const sid = getActiveStudentId();
@@ -138,6 +157,9 @@ function VeliProfilInner() {
 
     apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
       if (!data) return;
+      setAllStudents(
+        (data.students as any[])?.map((s: any) => ({ id: s.id, firstName: s.firstName || "Öğrenci", lastName: s.lastName || "" })) ?? []
+      );
       const student = (data.students as any[])?.find((s: any) => s.id === sid) ?? data.students?.[0];
       if (student?.id) setActiveStudentIdLocal(student.id);
       setForm({
@@ -171,6 +193,19 @@ function VeliProfilInner() {
         setExtraContacts([{ phone: data.extraPhone, relation: data.extraPhoneRelation ?? "", firstName: "", lastName: "" }]);
       }
     });
+  }, []);
+
+  // Layout'tan öğrenci değişince profil formunu güncelle
+  useEffect(() => {
+    function onStudentChanged(e: Event) {
+      const detail = (e as CustomEvent<{ studentId: string }>).detail;
+      setActiveStudentIdLocal(detail.studentId);
+      apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
+        if (data) loadStudentData(detail.studentId, data);
+      });
+    }
+    window.addEventListener("veli-student-changed", onStudentChanged);
+    return () => window.removeEventListener("veli-student-changed", onStudentChanged);
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -221,6 +256,31 @@ function VeliProfilInner() {
           <h1 className="text-xl font-bold text-gray-900">Bilgileri Düzenle</h1>
           <Link href="/veli/profil" className="text-sm text-gray-500 hover:text-gray-700">İptal</Link>
         </div>
+
+        {allStudents.length > 1 && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
+            <span className="text-xs text-gray-500 whitespace-nowrap">Düzenlenen öğrenci:</span>
+            <select
+              aria-label="Düzenlenecek öğrenciyi seç"
+              value={activeStudentId}
+              onChange={(e) => {
+                const newId = e.target.value;
+                setActiveStudentIdLocal(newId);
+                setActiveStudentId(newId);
+                apiFetch<any>("/api/veli/ogrenci").then(({ data }) => {
+                  if (data) loadStudentData(newId, data);
+                });
+              }}
+              className="flex-1 text-sm font-medium rounded-xl border border-purple-200 px-3 py-1.5 text-gray-800 focus:outline-none focus:border-purple-400 bg-purple-50 cursor-pointer"
+            >
+              {allStudents.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.firstName} {s.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="space-y-5">
           {/* Öğrenci */}

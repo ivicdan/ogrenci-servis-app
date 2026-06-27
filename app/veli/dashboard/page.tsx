@@ -162,9 +162,10 @@ export default function VeliDashboard() {
     if (res?.studentId) {
       applyStudentId(res.studentId);
       setActiveStudentId(res.studentId);
-      window.dispatchEvent(new CustomEvent("veli-student-changed", { detail: { studentId: res.studentId } }));
+      // Önce layout'a listeyi yenile dedik, o da activeId'yi ayarlar
+      window.dispatchEvent(new CustomEvent("veli-students-updated", { detail: { studentId: res.studentId } }));
     }
-    // Öğrenci listesini güncelle
+    // Dashboard verisini de güncelle
     apiFetch<ParentData>("/api/veli/ogrenci").then(({ data }) => {
       if (data) setData(data);
     });
