@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual, createHmac } from "crypto";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 
 function requireAdmin(req: NextRequest) {
@@ -15,6 +16,25 @@ function requireAdmin(req: NextRequest) {
   } catch {
     return false;
   }
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAdmin(req)) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
+
+  const { id } = await params;
+  const { newPassword } = await req.json();
+
+  if (!newPassword || newPassword.length < 6 || newPassword.length > 128) {
+    return NextResponse.json({ error: "Şifre 6-128 karakter arasında olmalıdır." }, { status: 400 });
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.firm.update({
+    where: { id },
+    data: { password: hashed, sessionToken: null },
+  });
+
+  return NextResponse.json({ success: true });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

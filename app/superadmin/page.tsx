@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle, XCircle, Clock, ShieldOff, Trash2,
-  Eye, EyeOff, RefreshCw, LogOut, Building2, Users, Bus,
+  Eye, EyeOff, RefreshCw, LogOut, Building2, Users, Bus, KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +61,11 @@ export default function SuperAdmin() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [acting, setActing] = useState<string | null>(null);
 
+  const [resetFirmId, setResetFirmId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [showResetPass, setShowResetPass] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) setToken(saved);
@@ -107,6 +112,27 @@ export default function SuperAdmin() {
       "Durum güncellendi."
     );
     loadFirms();
+  }
+
+  function openReset(id: string) {
+    setResetFirmId(id);
+    setResetPassword("");
+    setShowResetPass(false);
+  }
+
+  async function handleResetPassword(e: React.FormEvent, id: string) {
+    e.preventDefault();
+    if (resetPassword.length < 6) return toast.error("Şifre en az 6 karakter olmalıdır.");
+    setResetLoading(true);
+    const data = await apiFetch(`/api/superadmin/firmalar/${id}`, token!, {
+      method: "POST",
+      body: JSON.stringify({ newPassword: resetPassword }),
+    });
+    setResetLoading(false);
+    if (data.error) return toast.error(data.error);
+    toast.success("Şifre başarıyla sıfırlandı.");
+    setResetFirmId(null);
+    setResetPassword("");
   }
 
   async function deleteFirm(id: string, name: string | null) {
@@ -291,6 +317,16 @@ export default function SuperAdmin() {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs h-7 px-3"
+                        onClick={() => openReset(firm.id)}
+                        disabled={isActing}
+                      >
+                        <KeyRound className="w-3.5 h-3.5 mr-1" />
+                        Şifre Sıfırla
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-7 px-3"
                         onClick={() => deleteFirm(firm.id, firm.name)}
                         disabled={isActing}
@@ -331,6 +367,52 @@ export default function SuperAdmin() {
                         </a>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Şifre sıfırlama inline formu */}
+                {resetFirmId === firm.id && (
+                  <div className="border-t border-indigo-100 bg-indigo-50 px-4 py-3">
+                    <p className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+                      <KeyRound className="w-3.5 h-3.5" /> ŞİFRE SIFIRLA — {firm.name ?? firm.firmCode}
+                    </p>
+                    <form onSubmit={(e) => handleResetPassword(e, firm.id)} className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showResetPass ? "text" : "password"}
+                          placeholder="Yeni şifre (en az 6 karakter)"
+                          value={resetPassword}
+                          onChange={(e) => setResetPassword(e.target.value)}
+                          className="text-sm h-8 pr-8 bg-white"
+                          required
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                          onClick={() => setShowResetPass(!showResetPass)}
+                        >
+                          {showResetPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-xs h-8 px-3 flex-shrink-0"
+                        disabled={resetLoading}
+                      >
+                        {resetLoading ? "..." : "Kaydet"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-8 px-3 flex-shrink-0"
+                        onClick={() => setResetFirmId(null)}
+                      >
+                        İptal
+                      </Button>
+                    </form>
                   </div>
                 )}
               </div>

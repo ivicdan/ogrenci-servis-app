@@ -12,12 +12,6 @@ import { apiFetch, setToken, setUserType, getToken, getUserType } from "@/lib/ap
 
 const STORAGE_KEY = "firma_remember";
 
-// Şifremi unuttum: 3 adım
-// 1 → TC gir, OTP gönder
-// 2 → OTP gir
-// 3 → Yeni şifre belirle
-type ForgotStep = 1 | 2 | 3;
-
 function FirmaGirisInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,15 +19,7 @@ function FirmaGirisInner() {
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotStep, setForgotStep] = useState<ForgotStep>(1);
-  const [forgotTc, setForgotTc] = useState("");
-  const [forgotOtp, setForgotOtp] = useState("");
-  const [forgotNewPass, setForgotNewPass] = useState("");
-  const [forgotNewPassConfirm, setForgotNewPassConfirm] = useState("");
-  const [showForgotPass, setShowForgotPass] = useState(false);
-  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     if (!searchParams.get("reason") && getToken() && getUserType() === "FIRM") {
@@ -64,44 +50,6 @@ function FirmaGirisInner() {
       setUserType("FIRM");
       router.push("/firma/dashboard");
     }
-  }
-
-  function openForgot() {
-    setForgotStep(1);
-    setForgotTc("");
-    setForgotOtp("");
-    setForgotNewPass("");
-    setForgotNewPassConfirm("");
-    setForgotOpen(true);
-  }
-
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
-    if (!/^\d{11}$/.test(forgotTc)) return toast.error("TC kimlik no 11 rakam olmalıdır.");
-    setForgotLoading(true);
-    const { error } = await apiFetch("/api/auth/firma/otp-gonder", {
-      method: "POST",
-      body: JSON.stringify({ taxOrTcId: forgotTc }),
-    });
-    setForgotLoading(false);
-    if (error) return toast.error(error);
-    toast.success("SMS gönderildi. Lütfen telefonunuzu kontrol edin.");
-    setForgotStep(2);
-  }
-
-  async function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault();
-    if (forgotNewPass !== forgotNewPassConfirm) return toast.error("Şifreler eşleşmiyor.");
-    if (forgotNewPass.length < 6) return toast.error("Şifre en az 6 karakter olmalıdır.");
-    setForgotLoading(true);
-    const { error } = await apiFetch("/api/auth/firma/sifre-sifirla", {
-      method: "POST",
-      body: JSON.stringify({ taxOrTcId: forgotTc, otpCode: forgotOtp, newPassword: forgotNewPass }),
-    });
-    setForgotLoading(false);
-    if (error) return toast.error(error);
-    toast.success("Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.");
-    setForgotOpen(false);
   }
 
   return (
@@ -143,9 +91,8 @@ function FirmaGirisInner() {
                 className="w-4 h-4 rounded border-gray-300 text-blue-600" />
               <span className="text-sm text-gray-600">Beni hatırla</span>
             </label>
-            <button type="button" onClick={openForgot} className="text-sm text-blue-600 hover:underline">
-              Şifremi Unuttum
-            </button>
+            <button type="button" onClick={() => setForgotOpen(true)}
+              className="text-sm text-blue-600 hover:underline">Şifremi Unuttum</button>
           </div>
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
@@ -158,120 +105,15 @@ function FirmaGirisInner() {
         </div>
       </div>
 
-      {/* Şifremi Unuttum Dialog */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent className="max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle>Şifre Sıfırlama</DialogTitle>
-          </DialogHeader>
-
-          {/* Adım göstergesi */}
-          <div className="flex items-center gap-1 mb-2">
-            {([1, 2, 3] as ForgotStep[]).map((step) => (
-              <div key={step} className="flex items-center gap-1 flex-1">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                  forgotStep >= step ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"
-                }`}>
-                  {step}
-                </div>
-                {step < 3 && <div className={`h-0.5 flex-1 ${forgotStep > step ? "bg-blue-600" : "bg-gray-100"}`} />}
-              </div>
-            ))}
-          </div>
-
-          {forgotStep === 1 && (
-            <form onSubmit={handleSendOtp} className="space-y-4 mt-1">
-              <p className="text-sm text-gray-500">Hesabınıza kayıtlı telefona doğrulama kodu göndereceğiz.</p>
-              <div>
-                <Label>TC Kimlik No</Label>
-                <Input
-                  className="mt-1"
-                  placeholder="11 haneli TC kimlik numaranız"
-                  value={forgotTc}
-                  onChange={(e) => setForgotTc(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                  inputMode="numeric"
-                  maxLength={11}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={forgotLoading}>
-                {forgotLoading ? "Gönderiliyor..." : "Doğrulama Kodu Gönder"}
-              </Button>
-            </form>
-          )}
-
-          {forgotStep === 2 && (
-            <form onSubmit={(e) => { e.preventDefault(); if (forgotOtp.length === 6) setForgotStep(3); else toast.error("6 haneli kodu girin."); }} className="space-y-4 mt-1">
-              <p className="text-sm text-gray-500">Telefonunuza gelen 6 haneli kodu girin.</p>
-              <div>
-                <Label>Doğrulama Kodu</Label>
-                <Input
-                  className="mt-1 text-center tracking-widest text-lg font-mono"
-                  placeholder="000000"
-                  value={forgotOtp}
-                  onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  inputMode="numeric"
-                  maxLength={6}
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setForgotStep(1)}>
-                  Geri
-                </Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  Devam
-                </Button>
-              </div>
-              <button
-                type="button"
-                onClick={handleSendOtp as any}
-                className="w-full text-xs text-blue-600 hover:underline"
-              >
-                Kodu tekrar gönder
-              </button>
-            </form>
-          )}
-
-          {forgotStep === 3 && (
-            <form onSubmit={handleResetPassword} className="space-y-4 mt-1">
-              <p className="text-sm text-gray-500">Yeni şifrenizi belirleyin.</p>
-              <div>
-                <Label>Yeni Şifre</Label>
-                <div className="relative mt-1">
-                  <Input
-                    type={showForgotPass ? "text" : "password"}
-                    placeholder="En az 6 karakter"
-                    value={forgotNewPass}
-                    onChange={(e) => setForgotNewPass(e.target.value)}
-                    required
-                  />
-                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" onClick={() => setShowForgotPass(!showForgotPass)}>
-                    {showForgotPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label>Yeni Şifre (Tekrar)</Label>
-                <Input
-                  className="mt-1"
-                  type={showForgotPass ? "text" : "password"}
-                  placeholder="Şifreyi tekrar girin"
-                  value={forgotNewPassConfirm}
-                  onChange={(e) => setForgotNewPassConfirm(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setForgotStep(2)}>
-                  Geri
-                </Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={forgotLoading}>
-                  {forgotLoading ? "Kaydediliyor..." : "Şifreyi Güncelle"}
-                </Button>
-              </div>
-            </form>
-          )}
+          <DialogHeader><DialogTitle>Şifremi Unuttum</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-600">
+            Şifrenizi unuttuysanız, kayıt sırasında kullandığınız{" "}
+            <span className="font-medium text-gray-800">TC Kimlik No</span> ile{" "}
+            sistem yöneticinize başvurun. Yönetici hesabınızın şifresini sıfırlayabilir.
+          </p>
+          <Button onClick={() => setForgotOpen(false)} className="w-full mt-2 bg-blue-600 hover:bg-blue-700">Tamam</Button>
         </DialogContent>
       </Dialog>
     </div>
