@@ -55,14 +55,14 @@ export async function POST(req: NextRequest) {
 
   if (target === "all" || target === "parents") {
     const parents = await prisma.parent.findMany({
-      where: { student: { firmId: user.id, status: "ACTIVE" }, phoneVerified: true },
+      where: { students: { some: { firmId: user.id, status: "ACTIVE" } }, phoneVerified: true },
       select: { id: true },
     });
     recipients.push(...parents.map((p) => ({ userId: p.id, userType: "PARENT" })));
   } else if (schoolTypeTargets[target]) {
     const parents = await prisma.parent.findMany({
       where: {
-        student: { firmId: user.id, status: "ACTIVE", schoolType: schoolTypeTargets[target] },
+        students: { some: { firmId: user.id, status: "ACTIVE", schoolType: schoolTypeTargets[target] } },
         phoneVerified: true,
       },
       select: { id: true },
