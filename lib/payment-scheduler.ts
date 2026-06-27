@@ -12,7 +12,7 @@ export async function runPaymentReminders() {
       id: true,
       firstName: true,
       paymentDay: true,
-      student: { select: { firmId: true } },
+      students: { select: { id: true }, where: { status: "ACTIVE" }, take: 1 },
     },
   });
 
@@ -32,13 +32,12 @@ export async function runPaymentReminders() {
     if (todayDay === payDay + 3) {
       // Bu ay APPROVED ödeme var mı kontrol et
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const approvedThisMonth = await prisma.payment.findFirst({
-        where: {
-          studentId: parent.student?.firmId ? undefined : undefined,
-          status: "APPROVED",
-          paidDate: { gte: startOfMonth },
-        },
-      });
+      const studentId = parent.students[0]?.id;
+      const approvedThisMonth = studentId
+        ? await prisma.payment.findFirst({
+            where: { studentId, status: "APPROVED", paidDate: { gte: startOfMonth } },
+          })
+        : null;
 
       if (!approvedThisMonth) {
         await createNotification({
