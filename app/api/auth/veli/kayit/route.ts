@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { rateLimit, ipKey } from "@/lib/rate-limit";
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 10);
+    const sessionToken = randomUUID();
 
     const result = await prisma.$transaction(async (tx) => {
       const parent = await tx.parent.create({
@@ -71,6 +73,7 @@ export async function POST(req: NextRequest) {
           phoneVerified: true,
           kvkkAccepted: true,
           kvkkAcceptedAt: new Date(),
+          sessionToken,
         },
       });
 
@@ -98,7 +101,7 @@ export async function POST(req: NextRequest) {
       return { parentId: parent.id, studentId };
     });
 
-    const token = signToken({ id: result.parentId, userType: "PARENT" });
+    const token = signToken({ id: result.parentId, userType: "PARENT", sessionToken });
     return NextResponse.json({ token, studentId: result.studentId }, { status: 201 });
   } catch (e) {
     console.error("[veli/kayit]", e);

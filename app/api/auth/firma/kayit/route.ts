@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { generateUniqueFirmCode } from "@/lib/id-generator";
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(password, 10);
+    const sessionToken = randomUUID();
     const firmCode = await generateUniqueFirmCode(
       async (code) => !!(await prisma.firm.findUnique({ where: { firmCode: code } }))
     );
@@ -60,10 +62,11 @@ export async function POST(req: NextRequest) {
         status: "PRE_REGISTERED",
         kvkkAccepted: true,
         kvkkAcceptedAt: new Date(),
+        sessionToken,
       },
     });
 
-    const token = signToken({ id: firm.id, userType: "FIRM" });
+    const token = signToken({ id: firm.id, userType: "FIRM", sessionToken });
 
     return NextResponse.json(
       { token, firm: { id: firm.id, firmCode: firm.firmCode, status: firm.status } },
