@@ -24,7 +24,7 @@ export async function createNotification(opts: NotifyOptions) {
     emitNotification(notif);
   } catch {}
 
-  // Web Push — arka planda çalışan cihazlara bildirim gönder
+  // Web Push — tarayıcıda açık olan cihazlara bildirim gönder
   try {
     const { sendPushToUser } = await import("./push");
     if (opts.firmId) {
@@ -35,6 +35,29 @@ export async function createNotification(opts: NotifyOptions) {
     }
     if (opts.parentId) {
       await sendPushToUser("PARENT", opts.parentId, { title: opts.title, body: opts.body });
+    }
+  } catch {}
+
+  // Expo Push — mobil uygulamaya bildirim gönder
+  try {
+    const { sendExpoPush } = await import("./expo-push");
+    if (opts.parentId) {
+      const parent = await prisma.parent.findUnique({
+        where: { id: opts.parentId },
+        select: { expoPushToken: true },
+      });
+      if (parent?.expoPushToken) {
+        await sendExpoPush(parent.expoPushToken, opts.title, opts.body);
+      }
+    }
+    if (opts.driverId) {
+      const driver = await prisma.driver.findUnique({
+        where: { id: opts.driverId },
+        select: { expoPushToken: true },
+      });
+      if (driver?.expoPushToken) {
+        await sendExpoPush(driver.expoPushToken, opts.title, opts.body);
+      }
     }
   } catch {}
 

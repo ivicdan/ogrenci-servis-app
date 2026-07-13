@@ -107,6 +107,7 @@ model Driver {
   assistantName     String?
   assistantPhone    String?
   sessionToken      String?
+  expoPushToken     String?
   currentLat        Float?
   currentLng        Float?
   locationUpdatedAt DateTime?
@@ -184,6 +185,7 @@ model Parent {
   parentRelation     String?
   paymentDay         Int?
   sessionToken       String?
+  expoPushToken      String?
   notifications      Notification[]
   absenceReports     AbsenceReport[]
   createdAt          DateTime        @default(now())
