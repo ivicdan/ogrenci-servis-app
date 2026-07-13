@@ -66,6 +66,7 @@ enum PaymentStatus {
   PENDING
   SUBMITTED
   APPROVED
+  REJECTED
 }
 
 // ───────────────────────────── MODELS ─────────────────────────────
