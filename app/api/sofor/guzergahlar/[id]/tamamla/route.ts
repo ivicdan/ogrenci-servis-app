@@ -78,29 +78,8 @@ export async function POST(
   const pickedUpStudents = routeWithStudents?.students.filter((s) => s.attendances.length > 0) ?? [];
 
   if (pickedUpStudents.length > 0) {
-    const existingDropoffs = await prisma.attendance.findMany({
-      where: {
-        studentId: { in: pickedUpStudents.map((s) => s.id) },
-        type: "DROPOFF",
-        date: { gte: todayStart, lt: todayEnd },
-      },
-      select: { studentId: true },
-    });
-    const alreadyDroppedOff = new Set(existingDropoffs.map((a) => a.studentId));
-
-    const toDropOff = pickedUpStudents.filter((s) => !alreadyDroppedOff.has(s.id));
-    if (toDropOff.length > 0) {
-      await prisma.attendance.createMany({
-        data: toDropOff.map((s) => ({
-          studentId: s.id,
-          driverId: user.id,
-          date: new Date(),
-          type: "DROPOFF",
-          status: "PICKED_UP",
-        })),
-      });
-    }
-
+    // Not: "Okula Gidiş" (PICKUP) tamamlanması "Eve Dönüş" (DROPOFF) yoklamasını
+    // otomatik oluşturmaz — bu iki liste birbirinden bağımsızdır.
     const parentIds = pickedUpStudents.map((s) => s.parent?.id).filter(Boolean) as string[];
     if (parentIds.length > 0) {
       await prisma.notification.createMany({

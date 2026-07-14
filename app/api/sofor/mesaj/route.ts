@@ -7,6 +7,28 @@ export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["DRIVER"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const box = searchParams.get("box");
+
+  if (box === "sent") {
+    const sent = await prisma.message.findMany({
+      where: { driverId: user.id },
+      include: { recipients: { select: { read: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(
+      sent.map((m) => ({
+        id: m.id,
+        title: m.title,
+        body: m.body,
+        createdAt: m.createdAt,
+        recipientCount: m.recipients.length,
+        readCount: m.recipients.filter((r) => r.read).length,
+      }))
+    );
+  }
+
   const recipients = await prisma.messageRecipient.findMany({
     where: { userId: user.id, userType: "DRIVER" },
     include: {
