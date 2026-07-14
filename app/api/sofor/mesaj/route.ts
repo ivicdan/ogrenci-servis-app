@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { notifyMessageRecipients } from "@/lib/message-push";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["DRIVER"]);
@@ -73,6 +74,12 @@ export async function POST(req: NextRequest) {
       },
     },
   });
+
+  await notifyMessageRecipients(
+    parentIds.map(id => ({ userId: id, userType: "PARENT" })),
+    title,
+    body
+  );
 
   return NextResponse.json({ ok: true, notified: parentIds.length });
 }

@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
     where: { parentId: user.id },
     orderBy: { startDate: "desc" },
     take: 10,
+    include: { student: { select: { firstName: true, lastName: true } } },
   });
 
   return NextResponse.json(reports);

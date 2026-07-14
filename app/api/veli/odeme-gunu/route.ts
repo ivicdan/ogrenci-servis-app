@@ -8,9 +8,9 @@ export async function PUT(req: NextRequest) {
 
   const { paymentDay } = await req.json();
 
-  if (!paymentDay || paymentDay < 1 || paymentDay > 28) {
+  if (!paymentDay || paymentDay < 1 || paymentDay > 31) {
     return NextResponse.json(
-      { error: "Ödeme günü 1 ile 28 arasında olmalıdır." },
+      { error: "Ödeme günü 1 ile 31 arasında olmalıdır." },
       { status: 400 }
     );
   }

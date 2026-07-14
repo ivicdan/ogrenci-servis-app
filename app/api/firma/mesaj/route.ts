@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { notifyMessageRecipients } from "@/lib/message-push";
 
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
@@ -88,7 +89,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Bildirim oluşturulmaz — mesajlar ayrı "Mesajlar" sekmesinde gösterilir
+  // Bildirim (Notification) oluşturulmaz — mesajlar ayrı "Mesajlar" sekmesinde gösterilir,
+  // ama alıcıya sesli/rozetli push bildirimi yine de gönderilir
+  await notifyMessageRecipients(recipients, title, body);
 
   return NextResponse.json(message, { status: 201 });
 }

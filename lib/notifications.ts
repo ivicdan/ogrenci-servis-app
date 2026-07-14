@@ -6,6 +6,7 @@ interface NotifyOptions {
   parentId?: string;
   title: string;
   body: string;
+  channelId?: string;
 }
 
 export async function createNotification(opts: NotifyOptions) {
@@ -47,7 +48,13 @@ export async function createNotification(opts: NotifyOptions) {
         select: { expoPushToken: true },
       });
       if (parent?.expoPushToken) {
-        await sendExpoPush(parent.expoPushToken, opts.title, opts.body);
+        const badge = await prisma.notification.count({
+          where: { parentId: opts.parentId, read: false },
+        });
+        await sendExpoPush(parent.expoPushToken, opts.title, opts.body, {
+          channelId: opts.channelId,
+          badge,
+        });
       }
     }
     if (opts.driverId) {
@@ -56,7 +63,13 @@ export async function createNotification(opts: NotifyOptions) {
         select: { expoPushToken: true },
       });
       if (driver?.expoPushToken) {
-        await sendExpoPush(driver.expoPushToken, opts.title, opts.body);
+        const badge = await prisma.notification.count({
+          where: { driverId: opts.driverId, read: false },
+        });
+        await sendExpoPush(driver.expoPushToken, opts.title, opts.body, {
+          channelId: opts.channelId,
+          badge,
+        });
       }
     }
   } catch {}

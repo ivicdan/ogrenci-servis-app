@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
+// 31 gibi değerler daha kısa aylarda taşma yapmasın diye ayın son gününe sabitlenir
+function clampedDueDate(year: number, month: number, day: number) {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, lastDay));
+}
+
 export async function GET(req: NextRequest) {
   const user = requireAuth(req, ["PARENT"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
@@ -16,16 +22,20 @@ export async function GET(req: NextRequest) {
 
   if (!parent?.paymentDay) return NextResponse.json({ overdue: false });
 
+  const today = new Date();
+  const dueDate = clampedDueDate(today.getFullYear(), today.getMonth(), parent.paymentDay);
+  const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 5) return NextResponse.json({ overdue: false });
+
   const student = await prisma.student.findFirst({
     where: { parentId: user.id, status: "ACTIVE", ...(studentId ? { id: studentId } : {}) },
     select: {
       payments: {
-        where: {
-          status: "APPROVED",
-          createdAt: { gte: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) },
-        },
+        where: { createdAt: { gte: dueDate } },
+        orderBy: { createdAt: "desc" },
         take: 1,
-        select: { id: true },
+        select: { status: true },
       },
     },
     orderBy: { createdAt: "asc" },
@@ -33,10 +43,10 @@ export async function GET(req: NextRequest) {
 
   if (!student) return NextResponse.json({ overdue: false });
 
-  const today = new Date();
-  const dueDate = new Date(today.getFullYear(), today.getMonth(), parent.paymentDay);
-  const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-  const overdue = diffDays >= 5 && student.payments.length === 0;
+  const latest = student.payments[0] ?? null;
+  // Onaylanmış ya da inceleme bekleyen (SUBMITTED) bir ödeme varsa uyarı durur;
+  // reddedilirse ya da hiç bildirim yoksa firma onaylayana kadar uyarı devam eder
+  const overdue = !latest || latest.status === "REJECTED";
 
   return NextResponse.json({ overdue, daysLate: overdue ? diffDays : 0 });
 }

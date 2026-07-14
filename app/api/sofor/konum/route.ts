@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { emitDriverLocation } from "@/lib/socket-emitter";
+import { createNotification } from "@/lib/notifications";
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371000;
@@ -84,12 +85,11 @@ export async function POST(req: NextRequest) {
 
       if (!alreadySent) {
         const etaMin = Math.max(1, Math.round((dist / 1000 / 30) * 60));
-        await prisma.notification.create({
-          data: {
-            parentId: p.id,
-            title: "Servis Yaklaşıyor",
-            body: `Servisiniz yaklaşık ${etaMin} dakika içinde kapınızda olacak.`,
-          },
+        await createNotification({
+          parentId: p.id,
+          title: "Servis Yaklaşıyor",
+          body: `Servisiniz yaklaşık ${etaMin} dakika içinde kapınızda olacak.`,
+          channelId: "servis_yaklasiyor",
         });
         etaNotifs.push(student.id);
       }
