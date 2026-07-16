@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,21 @@ function validateTcId(tc: string) {
   return /^\d{11}$/.test(tc.replace(/\s/g, ""));
 }
 
-export default function VeliKayit() {
+function VeliKayitForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromApp = searchParams.get("from") === "app";
+
   const [form, setForm] = useState({ firmCode: "", studentTcId: "", phone: "", password: "", passwordConfirm: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [kvkkChecked, setKvkkChecked] = useState(false);
   const [kvkkOpen, setKvkkOpen] = useState(false);
+  const [appToken, setAppToken] = useState<string | null>(null);
+
+  function openApp(token: string) {
+    window.location.href = `servisivelim://kayit-basarili?token=${encodeURIComponent(token)}`;
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -40,14 +48,41 @@ export default function VeliKayit() {
     setLoading(false);
     if (error) return toast.error(error);
     if (data?.token) {
+      toast.success("Kayıt tamamlandı!");
+      if (fromApp) {
+        setAppToken(data.token);
+        openApp(data.token);
+        return;
+      }
       if (typeof window !== "undefined") {
         localStorage.setItem("token", data.token);
         localStorage.setItem("userType", "PARENT");
         if (data.studentId) localStorage.setItem("veli_student_id", data.studentId);
       }
-      toast.success("Kayıt tamamlandı!");
       router.push("/veli/profil");
     }
+  }
+
+  if (appToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-violet-100">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6 text-center">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.svg" alt="ogrenciservisi.online" className="w-32 h-auto" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Kaydınız Tamamlandı!</h1>
+          <p className="text-gray-500 text-sm mb-5">
+            Kalan profil bilgilerinizi tamamlamak için uygulamaya dönün.
+          </p>
+          <Button
+            className="w-full bg-purple-600 hover:bg-purple-700"
+            onClick={() => openApp(appToken)}
+          >
+            Uygulamaya Dön
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -145,5 +180,13 @@ export default function VeliKayit() {
 
       <KvkkDialog open={kvkkOpen} onClose={() => setKvkkOpen(false)} />
     </div>
+  );
+}
+
+export default function VeliKayit() {
+  return (
+    <Suspense fallback={null}>
+      <VeliKayitForm />
+    </Suspense>
   );
 }
