@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -42,18 +43,17 @@ export async function POST(
 
     const boardedStudents = routeWithStudents?.dropoffStudents.filter((s) => s.attendances.length > 0) ?? [];
 
-    if (boardedStudents.length > 0) {
-      const parentIds = boardedStudents.map((s) => s.parent?.id).filter(Boolean) as string[];
-      if (parentIds.length > 0) {
-        await prisma.notification.createMany({
-          data: parentIds.map((parentId) => ({
-            parentId,
+    await Promise.all(
+      boardedStudents
+        .filter((s) => s.parent?.id)
+        .map((s) =>
+          createNotification({
+            parentId: s.parent!.id,
             title: "Sefer Tamamlandı",
-            body: "Çocuğunuz eve güvenli bir şekilde ulaşmıştır.",
-          })),
-        });
-      }
-    }
+            body: `${s.firstName} öğrencimiz eve güvenli bir şekilde ulaştırılmıştır.`,
+          })
+        )
+    );
 
     await prisma.route.update({ where: { id }, data: { tripStartedAt: null } });
     return NextResponse.json({ ok: true, notified: boardedStudents.length });
@@ -77,20 +77,19 @@ export async function POST(
 
   const pickedUpStudents = routeWithStudents?.students.filter((s) => s.attendances.length > 0) ?? [];
 
-  if (pickedUpStudents.length > 0) {
-    // Not: "Okula Gidiş" (PICKUP) tamamlanması "Eve Dönüş" (DROPOFF) yoklamasını
-    // otomatik oluşturmaz — bu iki liste birbirinden bağımsızdır.
-    const parentIds = pickedUpStudents.map((s) => s.parent?.id).filter(Boolean) as string[];
-    if (parentIds.length > 0) {
-      await prisma.notification.createMany({
-        data: parentIds.map((parentId) => ({
-          parentId,
+  // Not: "Okula Gidiş" (PICKUP) tamamlanması "Eve Dönüş" (DROPOFF) yoklamasını
+  // otomatik oluşturmaz — bu iki liste birbirinden bağımsızdır.
+  await Promise.all(
+    pickedUpStudents
+      .filter((s) => s.parent?.id)
+      .map((s) =>
+        createNotification({
+          parentId: s.parent!.id,
           title: "Sefer Tamamlandı",
-          body: "Çocuğunuz okula güvenli bir şekilde ulaşmıştır.",
-        })),
-      });
-    }
-  }
+          body: `${s.firstName} öğrencimiz okula güvenli bir şekilde ulaştırılmıştır.`,
+        })
+      )
+  );
 
   await prisma.route.update({ where: { id }, data: { tripStartedAt: null } });
   return NextResponse.json({ ok: true, notified: pickedUpStudents.length });
