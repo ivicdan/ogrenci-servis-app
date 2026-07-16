@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
 function downloadExcel(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
@@ -108,7 +109,7 @@ export default function FirmaOgrenciler() {
               <div>
                 <p className="font-semibold text-gray-900">{s.firstName} {s.lastName}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {s.school} · {s.class}
+                  {s.school} · {formatSinif(s.class)}
                   {s.teacher && ` · ${s.teacher}`}
                 </p>
               </div>

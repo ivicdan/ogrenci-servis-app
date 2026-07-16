@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { rateLimit, ipKey } from "@/lib/rate-limit";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(ipKey(req, "veli-kayit"), 3, 60 * 60 * 1000);
@@ -99,6 +100,12 @@ export async function POST(req: NextRequest) {
       }
 
       return { parentId: parent.id, studentId };
+    });
+
+    await createNotification({
+      firmId: firm.id,
+      title: "Yeni Veli Kaydı",
+      body: `${phoneDigits} numaralı telefon ile yeni bir veli kaydı oluşturuldu.`,
     });
 
     const token = signToken({ id: result.parentId, userType: "PARENT", sessionToken });

@@ -52,7 +52,7 @@ export async function createNotification(opts: NotifyOptions) {
           where: { parentId: opts.parentId, read: false },
         });
         await sendExpoPush(parent.expoPushToken, opts.title, opts.body, {
-          channelId: opts.channelId,
+          channelId: opts.channelId ?? "mesajlar",
           badge,
         });
       }
@@ -67,7 +67,7 @@ export async function createNotification(opts: NotifyOptions) {
           where: { driverId: opts.driverId, read: false },
         });
         await sendExpoPush(driver.expoPushToken, opts.title, opts.body, {
-          channelId: opts.channelId,
+          channelId: opts.channelId ?? "mesajlar",
           badge,
         });
       }

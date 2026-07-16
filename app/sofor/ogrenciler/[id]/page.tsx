@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { GraduationCap, ArrowLeft, Phone, MapPin } from "lucide-react";
 import { CopyPhone } from "@/components/copy-phone";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah", AFTERNOON: "Öğleden Sonra",
@@ -52,7 +53,7 @@ export default function SoforOgrenciDetay() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900">{student.firstName} {student.lastName}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{student.school} · {student.class}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{student.school} · {formatSinif(student.class)}</p>
             {student.teacher && <p className="text-xs text-gray-500">Öğretmen: {student.teacher}</p>}
           </div>
         </div>

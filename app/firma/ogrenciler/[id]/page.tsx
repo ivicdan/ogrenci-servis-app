@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 import type { StudentMapPoint } from "@/components/route-map";
 
 const RouteMap = dynamic(() => import("@/components/route-map"), { ssr: false });
@@ -281,7 +282,7 @@ export default function OgrenciDetay() {
               </Badge>
             </div>
             <div className="mt-2 space-y-1 text-sm text-gray-600">
-              <p>{student.school} · {student.class}</p>
+              <p>{student.school} · {formatSinif(student.class)}</p>
               {student.teacher && <p>Öğretmen: {student.teacher}</p>}
               <p>Öğrenim: {studyTimeLabel[student.studyTime]}</p>
               <p className="text-xs text-gray-400">TC: {student.tcId}</p>

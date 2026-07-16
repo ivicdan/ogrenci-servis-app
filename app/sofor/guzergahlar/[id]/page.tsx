@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 import { CopyPhone } from "@/components/copy-phone";
 import type { StudentMapPoint } from "@/components/route-map";
 
@@ -379,7 +380,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                     <span className="text-xs font-bold text-green-700 w-5 text-center">{idx + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-gray-900 truncate">{s.firstName} {s.lastName}</p>
-                      <p className="text-xs text-gray-500">{s.class}</p>
+                      <p className="text-xs text-gray-500">{formatSinif(s.class)}</p>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <button onClick={() => moveUp(idx)} disabled={idx === 0} className="disabled:opacity-30 text-gray-500 hover:text-green-600">
@@ -408,7 +409,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                   <input type="checkbox" checked={selected} onChange={() => toggleStudent(s.id)} className="w-4 h-4 rounded text-green-600" />
                   <div>
                     <p className="font-medium text-sm text-gray-900">{s.firstName} {s.lastName}</p>
-                    <p className="text-xs text-gray-500">{s.class}</p>
+                    <p className="text-xs text-gray-500">{formatSinif(s.class)}</p>
                   </div>
                 </label>
               );
@@ -574,7 +575,7 @@ export default function GuzergahDetay({ params }: { params: Promise<{ id: string
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {student.class}{student.teacher && ` · ${student.teacher}`}
+                    {formatSinif(student.class)}{student.teacher && ` · ${student.teacher}`}
                   </p>
                 </div>
               </div>

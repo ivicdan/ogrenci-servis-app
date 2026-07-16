@@ -5,6 +5,7 @@ import { GraduationCap, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CopyPhone } from "@/components/copy-phone";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah", AFTERNOON: "Öğleden Sonra",
@@ -72,7 +73,7 @@ export default function SoforOgrenciler() {
               <div>
                 <p className="font-semibold text-gray-900">{s.firstName} {s.lastName}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {s.school} · {s.class}
+                  {s.school} · {formatSinif(s.class)}
                   {s.teacher && ` · ${s.teacher}`}
                 </p>
               </div>

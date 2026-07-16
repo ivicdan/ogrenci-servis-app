@@ -18,7 +18,7 @@ export async function notifyMessageRecipients(
           const badge = await prisma.messageRecipient.count({
             where: { userId: r.userId, userType: "PARENT", read: false },
           });
-          await sendExpoPush(parent.expoPushToken, title, body, { badge });
+          await sendExpoPush(parent.expoPushToken, title, body, { badge, channelId: "mesajlar" });
         } else if (r.userType === "DRIVER") {
           const driver = await prisma.driver.findUnique({
             where: { id: r.userId },
@@ -28,7 +28,7 @@ export async function notifyMessageRecipients(
           const badge = await prisma.messageRecipient.count({
             where: { userId: r.userId, userType: "DRIVER", read: false },
           });
-          await sendExpoPush(driver.expoPushToken, title, body, { badge });
+          await sendExpoPush(driver.expoPushToken, title, body, { badge, channelId: "mesajlar" });
         }
       } catch {}
     })
