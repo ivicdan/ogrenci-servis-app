@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { formatSinif } from "@/lib/utils";
 
 const studyTimeLabel: Record<string, string> = {
   MORNING: "Sabah", AFTERNOON: "Öğleden Sonra",
@@ -287,7 +288,7 @@ export default function SoforDetay() {
             {driver.students.map((s) => (
               <div key={s.id} className="border border-gray-100 rounded-xl p-3">
                 <p className="font-medium text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
-                <p className="text-xs text-gray-500">{s.school} · {s.class} · {studyTimeLabel[s.studyTime]}</p>
+                <p className="text-xs text-gray-500">{s.school} · {formatSinif(s.class)} · {studyTimeLabel[s.studyTime]}</p>
                 {s.parent && <p className="text-xs text-gray-500 mt-1">👤 {s.parent.firstName} {s.parent.lastName} · <CopyPhone phone={s.parent.phone} /></p>}
               </div>
             ))}
