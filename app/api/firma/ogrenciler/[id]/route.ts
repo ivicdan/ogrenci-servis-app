@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(
   req: NextRequest,
@@ -64,10 +65,13 @@ export async function PUT(
   const student = await prisma.student.findFirst({ where: { id, firmId: user.id } });
   if (!student) return NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
 
+  let driver = null;
   if (driverId) {
-    const driver = await prisma.driver.findFirst({ where: { id: driverId, firmId: user.id } });
+    driver = await prisma.driver.findFirst({ where: { id: driverId, firmId: user.id } });
     if (!driver) return NextResponse.json({ error: "Şoför bulunamadı." }, { status: 404 });
   }
+
+  const isNewAssignment = driverId !== undefined && driverId && driverId !== student.driverId;
 
   const updated = await prisma.student.update({
     where: { id },
@@ -77,6 +81,16 @@ export async function PUT(
       ...(serviceStartDate !== undefined ? { serviceStartDate: serviceStartDate ? new Date(serviceStartDate) : null } : {}),
     },
   });
+
+  // Şoföre yeni öğrenci atandığında bildirim gönder
+  if (isNewAssignment && driver) {
+    await createNotification({
+      driverId: driver.id,
+      title: "Yeni Öğrenci Ataması",
+      body: `${student.firstName} ${student.lastName} adlı öğrenci size atandı.`,
+      channelId: "ogrenci_atamasi",
+    });
+  }
 
   return NextResponse.json(updated);
 }
