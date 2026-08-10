@@ -92,6 +92,8 @@ model Firm {
   notifications  Notification[]
   routes         Route[]
   expenses       Expense[]
+  manualIncomes  ManualIncome[]
+  vehicles       Vehicle[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -303,8 +305,40 @@ model Expense {
   payee       String
   category    String   @default("Diğer")
   note        String?
+  isCredit    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model ManualIncome {
+  id          String   @id @default(uuid())
+  firmId      String
+  firm        Firm     @relation(fields: [firmId], references: [id])
+  date        DateTime
+  amount      Decimal  @db.Decimal(10, 2)
+  description String
+  source      String
+  category    String   @default("Diğer")
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Vehicle {
+  id                 String    @id @default(uuid())
+  firmId             String
+  firm               Firm      @relation(fields: [firmId], references: [id])
+  plate              String
+  brand              String?
+  model              String?
+  year               Int?
+  insuranceCompany   String?
+  insuranceStart     DateTime?
+  insuranceEnd       DateTime?
+  nextInspectionDate DateTime?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model PushSubscription {

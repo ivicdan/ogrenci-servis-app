@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard, Clock, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, GraduationCap, MessageSquare, Settings, LogOut, Bus, Bell, CreditCard, Clock, BookOpen, Car } from "lucide-react";
 import { getUserType, clearToken, apiFetch } from "@/lib/api-client";
 import { playNotificationSound, soundTypeFromTitle, requestNotificationPermission, showPushNotification } from "@/lib/notification-sound";
 import { subscribeToPush } from "@/app/pwa-register";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/firma/mesajlar", label: "Mesajlar", icon: MessageSquare, showBadge: true },
   { href: "/firma/odemeler", label: "Ödemeler", icon: CreditCard },
   { href: "/firma/muhasebe", label: "Muhasebe", icon: BookOpen },
+  { href: "/firma/araclarim", label: "Araçlarım", icon: Car },
   { href: "/firma/ayarlar", label: "Ayarlar", icon: Settings },
 ];
 
