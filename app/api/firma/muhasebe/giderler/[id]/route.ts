@@ -11,7 +11,7 @@ export async function PUT(
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const { date, amount, description, payee, category, note } = body;
+  const { date, amount, description, payee, category, note, isCredit } = body;
 
   const expense = await prisma.expense.findFirst({ where: { id, firmId: user.id } });
   if (!expense) return NextResponse.json({ error: "Gider bulunamadı." }, { status: 404 });
@@ -25,6 +25,7 @@ export async function PUT(
       ...(payee ? { payee } : {}),
       ...(category !== undefined ? { category } : {}),
       ...(note !== undefined ? { note: note || null } : {}),
+      ...(isCredit !== undefined ? { isCredit: isCredit === true } : {}),
     },
   });
 

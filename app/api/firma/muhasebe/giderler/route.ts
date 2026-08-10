@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, amount, description, payee, category, note } = body;
+  const { date, amount, description, payee, category, note, isCredit } = body;
 
   if (!date || !amount || !description || !payee) {
     return NextResponse.json({ error: "Tarih, miktar, açıklama ve alıcı zorunludur." }, { status: 400 });
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       payee,
       category: category || "Diğer",
       note: note || null,
+      isCredit: isCredit === true,
     },
   });
 
