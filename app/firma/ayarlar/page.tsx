@@ -31,8 +31,8 @@ export default function FirmaAyarlar() {
         setFirm(data);
         const rawIban = data.iban ?? "";
         const digits = rawIban.startsWith("TR")
-          ? rawIban.slice(2).replace(/\D/g, "").slice(0, 16)
-          : rawIban.replace(/\D/g, "").slice(0, 16);
+          ? rawIban.slice(2).replace(/\D/g, "").slice(0, 24)
+          : rawIban.replace(/\D/g, "").slice(0, 24);
         const initial = { name: data.name ?? "", address: data.address ?? "", iban: digits };
         setForm(initial);
         setSavedForm(initial);
@@ -52,8 +52,8 @@ export default function FirmaAyarlar() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (form.iban && form.iban.length !== 16) {
-      return toast.error("IBAN 16 rakam olmalıdır.");
+    if (form.iban && form.iban.length !== 24) {
+      return toast.error("IBAN 24 rakam olmalıdır.");
     }
     setLoading(true);
     const ibanFull = form.iban ? "TR" + form.iban : "";
@@ -129,18 +129,18 @@ export default function FirmaAyarlar() {
             <div className="flex mt-1">
               <span className="flex items-center px-3 bg-gray-100 border border-r-0 border-input rounded-l-md text-sm font-mono font-semibold text-gray-700 select-none">TR</span>
               <Input
-                placeholder="16 haneli numara"
+                placeholder="24 haneli numara"
                 value={form.iban}
                 onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 24);
                   setForm({ ...form, iban: digits });
                 }}
                 className="rounded-l-none font-mono"
-                maxLength={16}
+                maxLength={24}
                 inputMode="numeric"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">Veliler bu IBAN'a ödeme yapacak. (TR + 16 rakam)</p>
+            <p className="text-xs text-gray-400 mt-1">Veliler bu IBAN'a ödeme yapacak. (TR + 24 rakam)</p>
           </div>
           <div className="flex gap-3 pt-1">
             <Button type="button" variant="outline" className="flex-1" onClick={handleCancel} disabled={loading}>

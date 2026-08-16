@@ -19,8 +19,8 @@ export default function FirmaEvrak() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (form.iban && form.iban.length !== 16) {
-      return toast.error("IBAN 16 rakam olmalıdır.");
+    if (form.iban && form.iban.length !== 24) {
+      return toast.error("IBAN 24 rakam olmalıdır.");
     }
 
     setLoading(true);
@@ -77,14 +77,14 @@ export default function FirmaEvrak() {
               </span>
               <Input
                 id="iban"
-                placeholder="16 haneli numara"
+                placeholder="24 haneli numara"
                 value={form.iban}
                 onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 24);
                   setForm({ ...form, iban: digits });
                 }}
                 className="rounded-l-none font-mono"
-                maxLength={16}
+                maxLength={24}
                 inputMode="numeric"
               />
             </div>
