@@ -33,6 +33,12 @@ export async function PUT(req: NextRequest) {
 
   const { name, address, iban, documents } = await req.json();
 
+  // Mevcut statüyü oku — sadece PRE_REGISTERED ise PENDING_APPROVAL'a geç
+  const current = await prisma.firm.findUnique({ where: { id: user.id }, select: { status: true } });
+  const newStatus = current?.status === "PRE_REGISTERED" && name && address
+    ? "PENDING_APPROVAL"
+    : undefined; // APPROVED veya PENDING_APPROVAL ise statüye dokunma
+
   const firm = await prisma.firm.update({
     where: { id: user.id },
     data: {
@@ -40,7 +46,7 @@ export async function PUT(req: NextRequest) {
       address: address ? trUpperCase(address) : address,
       iban,
       documents,
-      status: name && address ? "PENDING_APPROVAL" : undefined,
+      ...(newStatus ? { status: newStatus } : {}),
     },
     select: {
       id: true,
