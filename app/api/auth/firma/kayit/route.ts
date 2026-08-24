@@ -39,8 +39,20 @@ export async function POST(req: NextRequest) {
 
     const existing = await prisma.firm.findFirst({
       where: { OR: [{ taxOrTcId }, { phone: phoneDigits }] },
+      select: { id: true, deletedAt: true },
     });
     if (existing) {
+      // Silinen bir firmanın bilgileriyle kayıt denendi — süper admin uyarılsın
+      if (existing.deletedAt) {
+        await prisma.firm.update({
+          where: { id: existing.id },
+          data: { lastConflictAt: new Date() },
+        }).catch(() => {});
+        return NextResponse.json(
+          { error: "Bu bilgilerle daha önce bir firma kaydı oluşturulmuş ve silinmiştir. Lütfen yönetici ile iletişime geçin." },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: "Bu TC numarası veya telefon zaten kayıtlı." },
         { status: 409 }

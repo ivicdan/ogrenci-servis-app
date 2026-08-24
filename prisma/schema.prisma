@@ -86,6 +86,7 @@ model Firm {
   documents      Json?
   sessionToken   String?
   deletedAt      DateTime?
+  lastConflictAt DateTime?
   drivers        Driver[]
   students       Student[]
   messages       Message[]

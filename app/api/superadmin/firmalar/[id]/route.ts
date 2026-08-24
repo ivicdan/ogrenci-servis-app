@@ -61,6 +61,29 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!requireAdmin(req)) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
+  const { searchParams } = new URL(req.url);
+  const permanent = searchParams.get("permanent") === "true";
+
+  if (permanent) {
+    // Kalıcı silme — ilişkili tüm kayıtları sırayla sil
+    await prisma.messageRecipient.deleteMany({ where: { message: { firmId: id } } });
+    await prisma.message.deleteMany({ where: { firmId: id } });
+    await prisma.notification.deleteMany({ where: { firm: { id } } });
+    await prisma.pushSubscription.deleteMany({ where: { firm: { id } } });
+    await prisma.attendance.deleteMany({ where: { student: { firmId: id } } });
+    await prisma.absenceReport.deleteMany({ where: { student: { firmId: id } } });
+    await prisma.payment.deleteMany({ where: { student: { firmId: id } } });
+    await prisma.expense.deleteMany({ where: { firmId: id } });
+    await prisma.manualIncome.deleteMany({ where: { firmId: id } });
+    await prisma.vehicle.deleteMany({ where: { firmId: id } });
+    await prisma.stop.deleteMany({ where: { route: { firmId: id } } });
+    await prisma.route.deleteMany({ where: { firmId: id } });
+    await prisma.student.deleteMany({ where: { firmId: id } });
+    await prisma.driver.deleteMany({ where: { firmId: id } });
+    await prisma.firm.delete({ where: { id } });
+    return NextResponse.json({ success: true, permanent: true });
+  }
+
   // Soft delete — gerçek silme yerine deletedAt damgası
   await prisma.firm.update({
     where: { id },
