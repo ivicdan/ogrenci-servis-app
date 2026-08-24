@@ -61,7 +61,28 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!requireAdmin(req)) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
   const { id } = await params;
-  await prisma.firm.delete({ where: { id } });
+  // Soft delete — gerçek silme yerine deletedAt damgası
+  await prisma.firm.update({
+    where: { id },
+    data: { deletedAt: new Date(), sessionToken: null },
+  });
 
   return NextResponse.json({ success: true });
+}
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAdmin(req)) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
+
+  const { id } = await params;
+  const { action } = await req.json();
+
+  if (action === "restore") {
+    await prisma.firm.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ error: "Geçersiz işlem." }, { status: 400 });
 }

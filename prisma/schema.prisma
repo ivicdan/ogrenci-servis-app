@@ -85,6 +85,7 @@ model Firm {
   iban           String?
   documents      Json?
   sessionToken   String?
+  deletedAt      DateTime?
   drivers        Driver[]
   students       Student[]
   messages       Message[]

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   CheckCircle, XCircle, Clock, ShieldOff, Trash2,
   Eye, EyeOff, RefreshCw, LogOut, Building2, Users, Bus, KeyRound,
+  RotateCcw, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,23 +20,24 @@ interface Firm {
   address: string | null;
   status: string;
   createdAt: string;
+  deletedAt: string | null;
   documents: Record<string, string> | null;
   _count: { drivers: number; students: number };
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  PRE_REGISTERED: { label: "Evrak Yüklenmedi", color: "bg-gray-100 text-gray-600" },
-  PENDING_APPROVAL: { label: "Onay Bekliyor", color: "bg-yellow-100 text-yellow-700" },
-  ACTIVE: { label: "Aktif", color: "bg-green-100 text-green-700" },
-  SUSPENDED: { label: "Askıya Alındı", color: "bg-red-100 text-red-700" },
+  PRE_REGISTERED:  { label: "Evrak Yüklenmedi", color: "bg-gray-100 text-gray-600" },
+  PENDING_APPROVAL:{ label: "Onay Bekliyor",    color: "bg-yellow-100 text-yellow-700" },
+  ACTIVE:          { label: "Aktif",             color: "bg-green-100 text-green-700" },
+  SUSPENDED:       { label: "Askıya Alındı",     color: "bg-red-100 text-red-700" },
 };
 
 const DOC_LABELS: Record<string, string> = {
-  imza_sirkuleri: "İmza Sirküsü",
-  vergi_levhasi: "Vergi Levhası",
+  imza_sirkuleri:    "İmza Sirküsü",
+  vergi_levhasi:     "Vergi Levhası",
   kimlik_fotokopisi: "Kimlik Fotokopisi",
-  ticaret_sicil: "Ticaret Sicil",
-  faaliyet_belgesi: "Faaliyet Belgesi",
+  ticaret_sicil:     "Ticaret Sicil",
+  faaliyet_belgesi:  "Faaliyet Belgesi",
 };
 
 function apiFetch(path: string, token: string, options: RequestInit = {}) {
@@ -50,21 +52,24 @@ function apiFetch(path: string, token: string, options: RequestInit = {}) {
 }
 
 export default function SuperAdmin() {
-  const [token, setToken] = useState<string | null>(null);
-  const [secret, setSecret] = useState("");
+  const [token, setToken]       = useState<string | null>(null);
+  const [secret, setSecret]     = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [firms, setFirms] = useState<Firm[]>([]);
-  const [filter, setFilter] = useState("PENDING_APPROVAL");
-  const [loading, setLoading] = useState(false);
+  const [firms, setFirms]       = useState<Firm[]>([]);
+  const [filter, setFilter]     = useState("PENDING_APPROVAL");
+  const [loading, setLoading]   = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [acting, setActing] = useState<string | null>(null);
+  const [acting, setActing]     = useState<string | null>(null);
 
-  const [resetFirmId, setResetFirmId] = useState<string | null>(null);
+  const [resetFirmId, setResetFirmId]   = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [showResetPass, setShowResetPass] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
+  const [resetLoading, setResetLoading]   = useState(false);
+
+  // Silme onay state'i
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -107,10 +112,32 @@ export default function SuperAdmin() {
     setActing(null);
     if (data.error) return toast.error(data.error);
     toast.success(
-      status === "ACTIVE" ? "Firma onaylandı!" :
-      status === "SUSPENDED" ? "Firma askıya alındı." :
+      status === "ACTIVE"    ? "Firma onaylandı!"      :
+      status === "SUSPENDED" ? "Firma askıya alındı."  :
       "Durum güncellendi."
     );
+    loadFirms();
+  }
+
+  async function deleteFirm(id: string) {
+    setActing(id);
+    setConfirmDeleteId(null);
+    const data = await apiFetch(`/api/superadmin/firmalar/${id}`, token!, { method: "DELETE" });
+    setActing(null);
+    if (data.error) return toast.error(data.error);
+    toast.success("Firma silindi.");
+    loadFirms();
+  }
+
+  async function restoreFirm(id: string) {
+    setActing(id);
+    const data = await apiFetch(`/api/superadmin/firmalar/${id}`, token!, {
+      method: "PUT",
+      body: JSON.stringify({ action: "restore" }),
+    });
+    setActing(null);
+    if (data.error) return toast.error(data.error);
+    toast.success("Firma geri alındı.");
     loadFirms();
   }
 
@@ -133,16 +160,6 @@ export default function SuperAdmin() {
     toast.success("Şifre başarıyla sıfırlandı.");
     setResetFirmId(null);
     setResetPassword("");
-  }
-
-  async function deleteFirm(id: string, name: string | null) {
-    if (!confirm(`"${name ?? id}" firmasını kalıcı olarak silmek istediğinize emin misiniz?`)) return;
-    setActing(id);
-    const data = await apiFetch(`/api/superadmin/firmalar/${id}`, token!, { method: "DELETE" });
-    setActing(null);
-    if (data.error) return toast.error(data.error);
-    toast.success("Firma silindi.");
-    loadFirms();
   }
 
   function logout() {
@@ -190,10 +207,7 @@ export default function SuperAdmin() {
     );
   }
 
-  // ── PANEL ──
-  const counts = {
-    PENDING_APPROVAL: firms.filter((f) => filter === "PENDING_APPROVAL").length,
-  };
+  const isDeleted = filter === "DELETED";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -223,15 +237,16 @@ export default function SuperAdmin() {
         {/* Filtre sekmeleri */}
         <div className="flex gap-2 mb-6 flex-wrap">
           {[
-            { value: "PENDING_APPROVAL", label: "Onay Bekliyor", icon: Clock, color: "text-yellow-700 bg-yellow-50 border-yellow-200" },
-            { value: "ACTIVE", label: "Aktif", icon: CheckCircle, color: "text-green-700 bg-green-50 border-green-200" },
-            { value: "SUSPENDED", label: "Askıda", icon: XCircle, color: "text-red-700 bg-red-50 border-red-200" },
-            { value: "PRE_REGISTERED", label: "Evrak Yok", icon: Building2, color: "text-gray-700 bg-gray-50 border-gray-200" },
+            { value: "PENDING_APPROVAL", label: "Onay Bekliyor", icon: Clock,         color: "text-yellow-700 bg-yellow-50 border-yellow-200" },
+            { value: "ACTIVE",           label: "Aktif",          icon: CheckCircle,   color: "text-green-700 bg-green-50 border-green-200" },
+            { value: "SUSPENDED",        label: "Askıda",         icon: XCircle,       color: "text-red-700 bg-red-50 border-red-200" },
+            { value: "PRE_REGISTERED",   label: "Evrak Yok",      icon: Building2,     color: "text-gray-700 bg-gray-50 border-gray-200" },
+            { value: "DELETED",          label: "Silinenler",     icon: Trash2,        color: "text-rose-700 bg-rose-50 border-rose-200" },
           ].map(({ value, label, icon: Icon, color }) => (
             <button
               key={value}
               type="button"
-              onClick={() => { setFilter(value); setExpandedId(null); }}
+              onClick={() => { setFilter(value); setExpandedId(null); setConfirmDeleteId(null); }}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
                 filter === value ? color + " shadow-sm" : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
               }`}
@@ -253,28 +268,35 @@ export default function SuperAdmin() {
         {!loading && firms.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <Building2 className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Bu kategoride firma yok.</p>
+            <p className="text-sm">{isDeleted ? "Silinmiş firma yok." : "Bu kategoride firma yok."}</p>
           </div>
         )}
 
         <div className="space-y-3">
           {firms.map((firm) => {
-            const sc = statusConfig[firm.status];
+            const sc        = statusConfig[firm.status];
             const isExpanded = expandedId === firm.id;
-            const isActing = acting === firm.id;
-            const docs = firm.documents as Record<string, string> | null;
+            const isActing   = acting === firm.id;
+            const docs       = firm.documents as Record<string, string> | null;
+            const isConfirming = confirmDeleteId === firm.id;
 
             return (
-              <div key={firm.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={firm.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${isDeleted ? "border-rose-100 opacity-80" : "border-gray-100"}`}>
                 {/* Firma özet satırı */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-bold text-gray-900">{firm.name ?? "İsimsiz Firma"}</span>
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${sc?.color ?? "bg-gray-100 text-gray-600"}`}>
-                          {sc?.label ?? firm.status}
-                        </span>
+                        {isDeleted ? (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-600">
+                            Silindi · {new Date(firm.deletedAt!).toLocaleDateString("tr-TR")}
+                          </span>
+                        ) : (
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${sc?.color ?? "bg-gray-100 text-gray-600"}`}>
+                            {sc?.label ?? firm.status}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500 space-y-0.5">
                         <p>TC/Vergi: <span className="font-mono">{firm.taxOrTcId}</span> · Tel: {firm.phone}</p>
@@ -291,54 +313,66 @@ export default function SuperAdmin() {
 
                     {/* Aksiyon butonları */}
                     <div className="flex flex-col gap-1.5 flex-shrink-0">
-                      {firm.status !== "ACTIVE" && (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-xs h-7 px-3"
-                          onClick={() => updateStatus(firm.id, "ACTIVE")}
-                          disabled={isActing}
-                        >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                          Onayla
-                        </Button>
-                      )}
-                      {firm.status !== "SUSPENDED" && (
+                      {isDeleted ? (
+                        /* Silinen firma — sadece Geri Al */
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-orange-600 border-orange-200 hover:bg-orange-50 text-xs h-7 px-3"
-                          onClick={() => updateStatus(firm.id, "SUSPENDED")}
+                          className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs h-7 px-3"
+                          onClick={() => restoreFirm(firm.id)}
                           disabled={isActing}
                         >
-                          <XCircle className="w-3.5 h-3.5 mr-1" />
-                          Askıya Al
+                          <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                          Geri Al
                         </Button>
+                      ) : (
+                        <>
+                          {firm.status !== "ACTIVE" && (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-xs h-7 px-3"
+                              onClick={() => updateStatus(firm.id, "ACTIVE")}
+                              disabled={isActing}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> Onayla
+                            </Button>
+                          )}
+                          {firm.status !== "SUSPENDED" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-orange-600 border-orange-200 hover:bg-orange-50 text-xs h-7 px-3"
+                              onClick={() => updateStatus(firm.id, "SUSPENDED")}
+                              disabled={isActing}
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1" /> Askıya Al
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs h-7 px-3"
+                            onClick={() => openReset(firm.id)}
+                            disabled={isActing}
+                          >
+                            <KeyRound className="w-3.5 h-3.5 mr-1" /> Şifre Sıfırla
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-7 px-3"
+                            onClick={() => setConfirmDeleteId(isConfirming ? null : firm.id)}
+                            disabled={isActing}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Sil
+                          </Button>
+                        </>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs h-7 px-3"
-                        onClick={() => openReset(firm.id)}
-                        disabled={isActing}
-                      >
-                        <KeyRound className="w-3.5 h-3.5 mr-1" />
-                        Şifre Sıfırla
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-7 px-3"
-                        onClick={() => deleteFirm(firm.id, firm.name)}
-                        disabled={isActing}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        Sil
-                      </Button>
                     </div>
                   </div>
 
                   {/* Evrak genişlet butonu */}
-                  {docs && Object.keys(docs).length > 0 && (
+                  {!isDeleted && docs && Object.keys(docs).length > 0 && (
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : firm.id)}
@@ -348,6 +382,40 @@ export default function SuperAdmin() {
                     </button>
                   )}
                 </div>
+
+                {/* Silme onay paneli */}
+                {isConfirming && (
+                  <div className="border-t border-red-100 bg-red-50 px-4 py-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <p className="text-sm font-semibold text-red-700">
+                        &quot;{firm.name ?? firm.firmCode}&quot; firmasını silmek istediğinize emin misiniz?
+                      </p>
+                    </div>
+                    <p className="text-xs text-red-500 mb-3">
+                      Firma Silinenler bölümüne taşınacak. Geri alabilirsiniz.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-xs h-8 px-4"
+                        onClick={() => deleteFirm(firm.id)}
+                        disabled={isActing}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        Evet, Sil
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-8 px-4"
+                        onClick={() => setConfirmDeleteId(null)}
+                      >
+                        İptal
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Evraklar */}
                 {isExpanded && docs && (

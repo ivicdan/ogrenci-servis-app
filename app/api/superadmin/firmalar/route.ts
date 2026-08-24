@@ -23,8 +23,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? undefined;
 
+  // "deleted" özel filtresi — deletedAt dolu olanlar
+  const where = status === "DELETED"
+    ? { deletedAt: { not: null } }
+    : { deletedAt: null, ...(status ? { status: status as never } : {}) };
+
   const firms = await prisma.firm.findMany({
-    where: status ? { status: status as never } : undefined,
+    where,
     select: {
       id: true,
       firmCode: true,
@@ -34,6 +39,7 @@ export async function GET(req: NextRequest) {
       address: true,
       status: true,
       createdAt: true,
+      deletedAt: true,
       documents: true,
       _count: { select: { drivers: true, students: true } },
     },
