@@ -68,8 +68,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     // Kalıcı silme — ilişkili tüm kayıtları sırayla sil
     await prisma.messageRecipient.deleteMany({ where: { message: { firmId: id } } });
     await prisma.message.deleteMany({ where: { firmId: id } });
-    await prisma.notification.deleteMany({ where: { firm: { id } } });
-    await prisma.pushSubscription.deleteMany({ where: { firm: { id } } });
+    await prisma.notification.deleteMany({ where: { firmId: id } });
+    await prisma.pushSubscription.deleteMany({ where: { userId: id, userType: "FIRM" } });
     await prisma.attendance.deleteMany({ where: { student: { firmId: id } } });
     await prisma.absenceReport.deleteMany({ where: { student: { firmId: id } } });
     await prisma.payment.deleteMany({ where: { student: { firmId: id } } });
