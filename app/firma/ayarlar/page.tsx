@@ -20,8 +20,8 @@ interface FirmProfile {
 
 export default function FirmaAyarlar() {
   const [firm, setFirm] = useState<FirmProfile | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", iban: "" });
-  const [savedForm, setSavedForm] = useState({ name: "", address: "", iban: "" });
+  const [form, setForm] = useState({ name: "", address: "", iban: "", phone: "" });
+  const [savedForm, setSavedForm] = useState({ name: "", address: "", iban: "", phone: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,7 @@ export default function FirmaAyarlar() {
         const digits = rawIban.startsWith("TR")
           ? rawIban.slice(2).replace(/\D/g, "").slice(0, 24)
           : rawIban.replace(/\D/g, "").slice(0, 24);
-        const initial = { name: data.name ?? "", address: data.address ?? "", iban: digits };
+        const initial = { name: data.name ?? "", address: data.address ?? "", iban: digits, phone: data.phone ?? "" };
         setForm(initial);
         setSavedForm(initial);
       }
@@ -59,7 +59,7 @@ export default function FirmaAyarlar() {
     const ibanFull = form.iban ? "TR" + form.iban : "";
     const { error } = await apiFetch("/api/firma/profil", {
       method: "PUT",
-      body: JSON.stringify({ name: form.name, address: form.address, iban: ibanFull, documents: { submitted: true } }),
+      body: JSON.stringify({ name: form.name, address: form.address, iban: ibanFull, phone: form.phone, documents: { submitted: true } }),
     });
     setLoading(false);
     if (error) return toast.error(error);
@@ -109,6 +109,10 @@ export default function FirmaAyarlar() {
               <p className="text-sm font-medium text-gray-800 mt-0.5">{savedForm.address || "—"}</p>
             </div>
             <div>
+              <p className="text-xs text-gray-400">Telefon</p>
+              <p className="text-sm font-medium text-gray-800 mt-0.5">{savedForm.phone || "—"}</p>
+            </div>
+            <div>
               <p className="text-xs text-gray-400">IBAN</p>
               <p className="text-sm font-mono font-medium text-gray-800 mt-0.5">{displayIban}</p>
             </div>
@@ -123,6 +127,19 @@ export default function FirmaAyarlar() {
           <div>
             <Label>Adres</Label>
             <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label>Telefon</Label>
+            <Input
+              value={form.phone}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                setForm({ ...form, phone: digits });
+              }}
+              placeholder="05XX XXX XX XX"
+              inputMode="tel"
+              className="mt-1"
+            />
           </div>
           <div>
             <Label>IBAN</Label>

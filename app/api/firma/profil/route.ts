@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
   const user = requireAuth(req, ["FIRM"]);
   if (!user) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
 
-  const { name, address, iban, documents } = await req.json();
+  const { name, address, iban, phone, documents } = await req.json();
 
   // Mevcut statüyü oku — sadece PRE_REGISTERED ise PENDING_APPROVAL'a geç
   const current = await prisma.firm.findUnique({ where: { id: user.id }, select: { status: true } });
@@ -45,6 +45,7 @@ export async function PUT(req: NextRequest) {
       name: name ? trUpperCase(name) : name,
       address: address ? trUpperCase(address) : address,
       iban,
+      ...(phone !== undefined ? { phone } : {}),
       documents,
       ...(newStatus ? { status: newStatus } : {}),
     },
